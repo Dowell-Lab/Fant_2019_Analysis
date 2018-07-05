@@ -6,6 +6,60 @@
 # Strict error checking
 set -e
 
+# Argument Parsing
+# -pus/-pds = pause upstream/downstream
+# -gds = gene upstream
+
+usage()
+{
+		echo "genefilter.sh - a script for calculating fixed-width pausing indices"
+		echo "Example:"
+		echo "    ./genefilter.sh --pus=-100 --pds=300 --gds=2000 --srr=SRR2084576"
+		echo "Usage:"
+		echo "    -h/--help -- Display this help message."
+		echo "    --pus     -- Pausing bases upstream"
+		echo "    --pds     -- Pausing bases downstream"
+		echo "    --gds     -- Gene bases downstream"
+		echo "    --srr     -- SRR file to parse"
+		exit 0
+}
+
+while [ "$1" != "" ]; do
+    PARAM=$(echo $1 | awk -F= '{print $1}')
+		VALUE=$(echo $1 | awk -F= '{print $2}')
+		case $PARAM in
+				-h | --help)
+						usage
+						exit
+						;;
+				--pus)
+						pus=$VALUE
+						;;
+				--pds)
+						pds=$VALUE
+						;;
+				--gds)
+						gds=$VALUE
+						;;
+				--srr)
+						srr=$VALUE
+						;;
+				*)
+						echo "ERROR: unknown parameter \"$PARAM\""
+						usage
+						exit 1
+						;;
+		esac
+		shift
+done
+
+# Set Gene Downstream
+gus=$pus+1
+
+echo "Found parameters:"
+echo "Up: $pus, Down: $pds, Gene Up: $gus, Gene Down: $gds, SRR: $srr"
+
+
 # Make sure we have the necessary modules
 if ! type -t bedtools 
 then module load bedtools
@@ -18,14 +72,14 @@ Infile=$DirPrefix/NCBI_RefSeq_UCSC_RefSeq_hg19.bed
 OutFile=$DirPrefix/$TmpDir/pause_ratios.data
 OutGeneFile=$DirPrefix/$TmpDir/tss.bed 
 OutBodyFile=$DirPrefix/$TmpDir/body.bed 
-InterestFile=/scratch/Shares/public/nascentdb/processedv2.0/bedgraphs/SRR2084576.tri.BedGraph
+InterestFile=/scratch/Shares/public/nascentdb/processedv2.0/bedgraphs/$srr.tri.BedGraph
 InterestFilePos=$DirPrefix/$TmpDir/interest_pos.bed 
 InterestFileNeg=$DirPrefix/$TmpDir/interest_neg.bed 
 
 echo Prefiltering Reference Sequence...
-awk -v OFS='\t' '{if ($6 == "+") print $1, $2-100, $2+300, $4, $5, $6; else print $1, $3-100, $3+300, $4, $5, $6}' $Infile \
+awk -v OFS='\t' '{if ($6 == "+") print $1, $2-$pus, $2+$pds, $4, $5, $6; else print $1, $3-$pus, $3+$pds, $4, $5, $6}' $Infile \
 		| sort -k1,1 -k2,2n > $OutBodyFile &
-awk -v OFS='\t' '{if ($6 == "+") print $1, $2+301, $2+2000, $4, $5, $6; else print $1, $3+301, $3+2000, $4, $5, $6}' $Infile \
+awk -v OFS='\t' '{if ($6 == "+") print $1, $2+$gus, $2+$gds, $4, $5, $6; else print $1, $3+$gus, $3+$gds, $4, $5, $6}' $Infile \
 		| sort -k1,1 -k2,2n > $OutGeneFile &
 wait
 
