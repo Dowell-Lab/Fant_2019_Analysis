@@ -1,0 +1,39 @@
+# Configuration file for running our pausing analysis script. This
+# file contains descriptions of each method used for analysis, and can
+# be changed to accomodate any additional studies that used any of the
+# considered standard methods.
+
+# TSS Methods:
+  
+# slidemean - a sliding mean, using the region of slidemean_window within ± slidemean_range of the refseq TSS
+
+# Gene Body Methods:
+
+# running_threshold - finds the furthest region from the TSS 
+
+&core_2008:
+  out_name: "method_core_2008"
+  tss_method: slidemean
+  slidemean_window: 50 # win_size
+  slidemean_range: 1000 # range
+  tss_size_method: fixed_width
+  tss_start_adjustment: 0
+  tss_end_adjustment: 50
+  gene_body_method: running_threshold
+  running_threshold_cutoff: 5
+  running_threshold_max: 2500
+  
+&chen_2015:
+  out_name: "method_chen_2015"
+  tss_method: slidemean
+  slidemean_window: 50 # win_size
+  slidemean_range: 1000 # range
+  tss_size_method: fixed_width
+  tss_start_adjustment: -100
+  tss_end_adjustment: 300
+  gene_body_method: fixed
+  gene_body_start: 300
+  gen_body_end: 2000
+
+methods:
+  - *core_2008 
