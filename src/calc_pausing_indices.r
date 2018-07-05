@@ -11,14 +11,14 @@ if(length(args) < 1) {
 ## Help section
 if("--help" %in% args) {
     cat("
-      R Argument Parsing
+Calculate Pausing Indices using Core 2008 Method
+
+Arguments:
+   --srr=SRR000000 - SRR Number
+   --help          - Print this help message
  
-      Arguments:
-      --srr=SRR000000    - SRR Number
-      --help              - print this text
- 
-      Example:
-      ./script.r --srr=SRR123456 \n\n")
+Example:
+   ./calc_pausing_indices.r --srr=SRR123456 \n\n")
     
     q(save="no")
 }
@@ -27,12 +27,14 @@ if("--help" %in% args) {
 parseArgs <- function(x) strsplit(sub("^--", "", x), "=")
 argsDF <- as.data.frame(do.call("rbind", parseArgs(args)))
 argsL <- as.list(as.character(argsDF$V2))
+srr <- argsL
 
-if(is.null(argsL)) {
-    print("You must provide an SRR")
+if(is.null(srr)) {
+    warningr("You must provide an SRR")
     q()
 }
 
+message("Libpaths:")
 .libPaths( c( .libPaths(), "/Users/zama8258/R/") )
 .libPaths()
 message("Established libpaths")
@@ -47,7 +49,7 @@ no_cores <- detectCores()
 message(str_c("Using, ", no_cores, " cores."))
 
 ## Make sure we parse the correct srr
-message(str_c("SRR is: ", argsL))
+message(str_c("SRR is: ", srr))
 
 
 ## Get refseq annotations if we don't have them
@@ -66,13 +68,16 @@ ts <- transcripts(rgdb)
 
 ## Parse our SRR bam file as a Granges object
 message("Reading SRR BAM")
-reads <- as(readGAlignments("/scratch/Shares/public/nascentdb/processedv2.0/bams/SRR2084576.trimmed.bam"), "GRanges")
+reads <- as(readGAlignments(
+    str_c("/scratch/Shares/public/nascentdb/processedv2.0/bams/",
+          srr, ".trimmed.bam")), "GRanges")
 
 ## Calculate pausing indices using GROHmm code
 message("Calculating Pausing Indices")
+## TODO Make this user variable
 pi <- pausingIndex(ts, reads, size = 50, up = 1000, down = 1000, mc.cores=no_cores)
 
 ## Save for later analysis
 ## TODO - Export with SRR Name
 message("Saving pausing index data")
-save(pi, file="/scratch/Users/zama8258/pi_test.Rda")
+save(pi, file=str_c("/scratch/Users/zama8258/pause_output/Core_", srr, ".Rda"))
