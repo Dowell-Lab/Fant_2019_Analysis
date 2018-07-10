@@ -69,7 +69,7 @@ fi
 DirPrefix=/scratch/Users/zama8258
 TmpDir=genefilter_test
 Infile=$DirPrefix/NCBI_RefSeq_UCSC_RefSeq_hg19.bed
-OutFile=$DirPrefix/$TmpDir/pause_ratios.data
+OutFile=$DirPrefix/pause_output/$srr\_pause_ratios_$gds.data
 OutGeneFile=$DirPrefix/$TmpDir/tss.bed 
 OutBodyFile=$DirPrefix/$TmpDir/body.bed 
 InterestFile=/scratch/Shares/public/nascentdb/processedv2.0/bedgraphs/$srr.tri.BedGraph
@@ -77,9 +77,9 @@ InterestFilePos=$DirPrefix/$TmpDir/interest_pos.bed
 InterestFileNeg=$DirPrefix/$TmpDir/interest_neg.bed 
 
 echo Prefiltering Reference Sequence...
-awk -v OFS='\t' '{if ($6 == "+") print $1, $2-$pus, $2+$pds, $4, $5, $6; else print $1, $3-$pus, $3+$pds, $4, $5, $6}' $Infile \
+awk -v OFS='\t' -v pus="$pus" -v pds="$pds" '{if ($6 == "+") print $1, $2-pus, $2+pds, $4, $5, $6; else print $1, $3-pus, $3+pds, $4, $5, $6}' $Infile \
 		| sort -k1,1 -k2,2n > $OutBodyFile &
-awk -v OFS='\t' '{if ($6 == "+") print $1, $2+$gus, $2+$gds, $4, $5, $6; else print $1, $3+$gus, $3+$gds, $4, $5, $6}' $Infile \
+awk -v OFS='\t' -v pus="$gus" -v pds="$gds" '{if ($6 == "+") print $1, $2+gus, $2+gds, $4, $5, $6; else print $1, $3+gus, $3+gds, $4, $5, $6}' $Infile \
 		| sort -k1,1 -k2,2n > $OutGeneFile &
 wait
 

@@ -80,4 +80,4 @@ pi <- pausingIndex(ts, reads, size = 50, up = 1000, down = 1000, mc.cores=no_cor
 ## Save for later analysis
 ## TODO - Export with SRR Name
 message("Saving pausing index data")
-save(pi, file=str_c("/scratch/Users/zama8258/pause_output/Core_", srr, ".Rda"))
+save(pi, file=str_c("/scratch/Users/zama8258/pause_output/Pause_Core_", srr, ".Rda"))
