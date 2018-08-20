@@ -10,7 +10,8 @@
 # -	Combine all modes into 1 script using an argument
 #	- Use	tempfiles instead	of a fixed directory
 # - Add better error handling
-#	-	Make it all faster
+#	-	Make it all faster by	pipelining stuff better...
+# - Strip out	redundant	TSS's
 
 # Strict error checking
 set -e
@@ -76,37 +77,98 @@ if ! type -t bedtools
 then module load bedtools
 fi
 
-# Variables
+################################################################################
+################################################################################
+
+## Hey zach, you dummy. Test this. FIXME TODO FIXME
+
+# Variables we always need
 DirPrefix=/scratch/Users/zama8258
-TmpDir=charli_pi
-Infile=$DirPrefix/NCBI_RefSeq_UCSC_RefSeq_hg19.bed
-OutFile=$DirPrefix/pause_output/"$srr"_pause_ratios_$gds.data
-OutGeneFile=$DirPrefix/$TmpDir/"$srr"_"$gds"_tss.bed
-OutBodyFile=$DirPrefix/$TmpDir/"$srr"_"$gds"_body.bed
 InterestFile=$srr
 #InterestFile=/scratch/Shares/public/nascentdb/processedv2.0/bedgraphs/$srr.tri.BedGraph
-InterestFilePos=$DirPrefix/$TmpDir/"$srr"_"$gds"_interest_pos.bed
-InterestFileNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_interest_neg.bed
+Infile=$DirPrefix/NCBI_RefSeq_UCSC_RefSeq_hg19.bed
+OutFile=$DirPrefix/pause_output/"$srr"_pause_ratios_$gds.data
 
-echo Prefiltering Reference Sequence...
+
+#	During debugging, we write out all output to disk so that we can
+#	examine it and see what's going on with our script changes. This is
+#	not necessary during production.
+testing=true
+
+if $testing; then
+		# Variables	-	DEBUG
+		echo "Running in Debugging Mode."
+		TmpDir=charli_pi
+
+		OutGeneFile=$DirPrefix/$TmpDir/"$srr"_"$gds"_tss.bed
+		OutBodyFile=$DirPrefix/$TmpDir/"$srr"_"$gds"_body.bed
+
+		InterestFilePos=$DirPrefix/$TmpDir/"$srr"_"$gds"_interest_pos.bed
+		InterestFileNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_interest_neg.bed
+
+		GeneOutPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_gene_pos.bed
+		GeneOutNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_gene_neg.bed
+		BodyOutPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_body_pos.bed
+		BodyOutNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_body_neg.bed
+
+		CoverageOutPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_coverage_pos.bed
+		CoverageOutNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_coverage_neg.bed
+
+		FinalPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_final_pos.bed
+		FinalNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_final_neg.bed
+
+else
+		echo "Running in Production Mode."
+		# Variables - PRODUCTION
+		TmpDir=$(mktemp -d)
+		OutGeneFile=$TmpDir/$(uuidgen)
+		OutBodyFile=$TmpDir/$(uuidgen)
+		InterestFilePos=$TmpDir/$(uuidgen)
+		InterestFileNeg=$TmpDir/$(uuidgen)
+		GeneOutPos=$TmpDir/$(uuidgen)
+		GeneOutNeg=$TmpDir/$(uuidgen)
+		BodyOutPos=$TmpDir/$(uuidgen)
+		BodyOutNeg=$TmpDir/$(uuidgen)
+		CoverageOutPos=$TmpDir/$(uuidgen)
+		CoverageOutNeg=$TmpDir/$(uuidgen)
+		FinalPos=$TmpDir/$(uuidgen)
+		FinalNeg=$TmpDir/$(uuidgen)
+
+		# Clean up temp files on exit
+		function cleanup {
+				rm -rf "$TmpDir"
+				echo "Deleted temporary directory $TmpDir"
+		}
+		# Register the cleanup function to be called on the EXIT signal
+		trap cleanup EXIT
+
+fi
+
+################################################################################
+################################################################################
+
+#	First we pre-filter refseq according to the input parameters, so
+#	that we can use bedtools to do the necessary genome arithmetic
+#	later. At the same time, we split our datafile into a stranded
+#	format to accomplish the same thing.
+
+# FIXME - Does this double-calculate because we don't automatically
+# assume strandedness? Is this a limitation of the fixed-window protocol?
+echo "Prefiltering Reference Sequence..."
 awk -v OFS='\t' -v pus="$pus" -v pds="$pds" '{if ($6 == "+") print $1, $2-pus, $2+pds, $4, $5, $6; else print $1, $3-pus, $3+pds, $4, $5, $6}' $Infile \
 		| sort -u -k1,1 -k2,2n | awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4}' > "$OutBodyFile" &
 awk -v OFS='\t' -v gus="$gus" -v gds="$gds" '{if ($6 == "+") print $1, $2+gus, $3, $4, $5, $6; else print $1, $3-gus, $3, $4, $5, $6}' $Infile \
 		| sort -u -k1,1 -k2,2n | awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4}' > "$OutGeneFile" &
-wait
-
-echo Splitting data file into pos and neg...
+echo "Splitting data file into pos and neg..." &
 awk -v OFS='\t' '{if ($4 > 0) print $1, $2, $3, $4}' "$InterestFile" > "$InterestFilePos" &
 awk -v OFS='\t' '{if ($4 < 0) print $1, $2, $3, $4}' "$InterestFile" > "$InterestFileNeg" &
 wait
 
-# Output Filenames
-GeneOutPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_gene_pos.bed
-GeneOutNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_gene_neg.bed
-BodyOutPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_body_pos.bed
-BodyOutNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_body_neg.bed
+# With the first portion of the analysis done, we proceed to calculate
+# the sum of reads in the regions we gathered using awk in the above
+# procedure. This is the slowest part of the script, in my experience.
 
-echo Finding Region Sums...
+echo "Finding Region Sums..."
 bedtools map -a "$OutGeneFile" -b "$InterestFilePos" -c 4 -o sum \
 		| awk '($5 != "." && $5 != 0) ' > "$GeneOutPos" &
 bedtools map -a "$OutBodyFile" -b "$InterestFilePos" -c 4 -o sum \
@@ -117,24 +179,32 @@ bedtools map -a "$OutBodyFile" -b "$InterestFileNeg" -c 4 -o sum \
 		| awk '($5 != "." && $5 != 0) ' > "$BodyOutNeg" &
 wait
 
-CoverageOutPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_coverage_pos.bed
-CoverageOutNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_coverage_neg.bed
+# With counts for all genes calculated, we can proceed to calculate
+# coverage for every gene that we haven't thrown out (we drop genes
+# that lack any reads in the paused region or the gene-body region,
+# since those missing gene-body reads leads to division by zero). Here
+# we calculate gene read coverage	normalizing by length (TODO)
 
-# FIXME - Finish Coverage Statistics
-echo Calculating Coverage Statistics
+# FIXME - Finish Coverage Statistics by dividing by length
+echo "Calculating Coverage Statistics"
 awk 'NR==FNR{a[NR]=$5;next}{print $5+a[FNR]}' "$GeneOutPos" "$BodyOutPos" > "$CoverageOutPos"	&
 awk 'NR==FNR{a[NR]=$5;next}{print $5+a[FNR]}' "$GeneOutNeg" "$BodyOutNeg" > "$CoverageOutNeg"	&
 wait
 
-FinalPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_final_pos.bed
-FinalNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_final_neg.bed
+#	Here we paste our coverage values into our existing file, so that we
+#	can retain them for our final processing step.
 
-# Add	Coverage to	Bodies
 paste "$BodyOutPos" "$CoverageOutPos" > "$FinalPos"	&
 paste "$BodyOutNeg" "$CoverageOutNeg" > "$FinalNeg" &
 wait
 
-echo Calculating Pausing Index
+# This is the last step, and the most complicated awk procedure. We
+# use a associative array with the (FIXME?) gene name as the key. Then
+# we can calculate the final pausing index while also retaining our
+# normalized coverage statistics.
+
+# FIXME figure out a way to	account for	refseq strandedness earlier on...
+echo "Calculating Pausing Index"
 awk -F '\t' 'FNR==NR{a[$4]=$5; next} ($4 in a) {print $4,"+",$5/a[$4], $6}' "$GeneOutPos" "$FinalPos" > "$OutFile"
 awk -F '\t' 'FNR==NR{a[$4]=$5; next} ($4 in a) {print $4,"-",$5/a[$4], $6}' "$GeneOutNeg" "$FinalNeg" >> "$OutFile"
 echo "Done $srr $gds"
