@@ -66,13 +66,14 @@ while [ "$1" != "" ]; do
 		shift
 done
 
-# Set Gene Downstream
+# Set Gene Downstream. This will need to change once we add support
+# for multiple modes of operation in a single script.
 gus=$(echo "$pds+1" | bc)
 
-echo "Found parameters:"
+echo "Got parameters:"
 echo "Up: $pus, Down: $pds, Gene Up: $gus, Gene Down: $gds, SRR: $srr"
 
-# Make sure we have the necessary modules
+# Make sure we have the necessary modules on the cluster
 if ! type -t bedtools 
 then module load bedtools
 fi
@@ -111,8 +112,9 @@ if $testing; then
 		BodyOutPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_body_pos.bed
 		BodyOutNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_body_neg.bed
 
-		CoverageOutPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_coverage_pos.bed
-		CoverageOutNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_coverage_neg.bed
+		# FIXME - Deprecated
+		# CoverageOutPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_coverage_pos.bed
+		# CoverageOutNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_coverage_neg.bed
 
 		FinalPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_final_pos.bed
 		FinalNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_final_neg.bed
@@ -129,8 +131,9 @@ else
 		GeneOutNeg=$TmpDir/$(uuidgen)
 		BodyOutPos=$TmpDir/$(uuidgen)
 		BodyOutNeg=$TmpDir/$(uuidgen)
-		CoverageOutPos=$TmpDir/$(uuidgen)
-		CoverageOutNeg=$TmpDir/$(uuidgen)
+		# FIXME - Deprecated
+		# CoverageOutPos=$TmpDir/$(uuidgen)
+		# CoverageOutNeg=$TmpDir/$(uuidgen)
 		FinalPos=$TmpDir/$(uuidgen)
 		FinalNeg=$TmpDir/$(uuidgen)
 
@@ -154,14 +157,30 @@ fi
 
 # FIXME - Does this double-calculate because we don't automatically
 # assume strandedness? Is this a limitation of the fixed-window protocol?
+
+# TODO This step is the prime location for breaking apart this thing
+# to have mode support. I think the easiest way to do this might just
+# be to break apart the awk commands for each respective mode and use
+# variable expansion inside other variable expansion to replace the
+# commands on the fly. A sort of bizarre metaprogramming, if you will.
+# FIXME Look at the second awk sequence here. Something doesn't look
+# quite right.
 echo "Prefiltering Reference Sequence..."
-awk -v OFS='\t' -v pus="$pus" -v pds="$pds" '{if ($6 == "+") print $1, $2-pus, $2+pds, $4, $5, $6; else print $1, $3-pus, $3+pds, $4, $5, $6}' $Infile \
-		| sort -u -k1,1 -k2,2n | awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4}' > "$OutBodyFile" &
-awk -v OFS='\t' -v gus="$gus" -v gds="$gds" '{if ($6 == "+") print $1, $2+gus, $3, $4, $5, $6; else print $1, $3-gus, $3, $4, $5, $6}' $Infile \
-		| sort -u -k1,1 -k2,2n | awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4}' > "$OutGeneFile" &
+awk -v OFS='\t' -v pus="$pus" -v pds="$pds" \
+		'{if ($6 == "+") print $1, $2-pus, $2+pds, $4, $5, $6; else print $1, $3-pus, $3+pds, $4, $5, $6}' $Infile \
+		| sort -u -k1,1 -k2,2n | \
+		awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4}' \
+				> "$OutBodyFile" &
+awk -v OFS='\t' -v gus="$gus" -v gds="$gds" \
+		'{if ($6 == "+") print $1, $2+gus, $3, $4, $5, $6; else print $1, $3-gus, $3, $4, $5, $6}' $Infile \
+		| sort -u -k1,1 -k2,2n | \
+		awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4}' \
+				> "$OutGeneFile" &
 echo "Splitting data file into pos and neg..." &
-awk -v OFS='\t' '{if ($4 > 0) print $1, $2, $3, $4}' "$InterestFile" > "$InterestFilePos" &
-awk -v OFS='\t' '{if ($4 < 0) print $1, $2, $3, $4}' "$InterestFile" > "$InterestFileNeg" &
+awk -v OFS='\t' '{if ($4 > 0) print $1, $2, $3, $4}' "$InterestFile" \
+		> "$InterestFilePos" &
+awk -v OFS='\t' '{if ($4 < 0) print $1, $2, $3, $4}' "$InterestFile" \
+		> "$InterestFileNeg" &
 wait
 
 # With the first portion of the analysis done, we proceed to calculate
@@ -183,19 +202,16 @@ wait
 # coverage for every gene that we haven't thrown out (we drop genes
 # that lack any reads in the paused region or the gene-body region,
 # since those missing gene-body reads leads to division by zero). Here
-# we calculate gene read coverage	normalizing by length (TODO)
+# we calculate gene read coverage normalizing by length (TODO). Using
+# process substitution, we immediately pipe those output values into a
+# final file for our last step.
 
-# FIXME - Finish Coverage Statistics by dividing by length
+# FIXME - Finish Coverage Statistics by dividing by length.
 echo "Calculating Coverage Statistics"
-awk 'NR==FNR{a[NR]=$5;next}{print $5+a[FNR]}' "$GeneOutPos" "$BodyOutPos" > "$CoverageOutPos"	&
-awk 'NR==FNR{a[NR]=$5;next}{print $5+a[FNR]}' "$GeneOutNeg" "$BodyOutNeg" > "$CoverageOutNeg"	&
-wait
-
-#	Here we paste our coverage values into our existing file, so that we
-#	can retain them for our final processing step.
-
-paste "$BodyOutPos" "$CoverageOutPos" > "$FinalPos"	&
-paste "$BodyOutNeg" "$CoverageOutNeg" > "$FinalNeg" &
+paste "$BodyOutPos" <(awk 'NR==FNR{a[NR]=$5;next}{print $5+a[FNR]}' \
+													"$GeneOutPos" "$BodyOutPos") > "$FinalPos"	&
+paste "$BodyOutNeg" <(awk 'NR==FNR{a[NR]=$5;next}{print $5+a[FNR]}' \
+													"$GeneOutNeg" "$BodyOutNeg") > "$FinalNeg"	&
 wait
 
 # This is the last step, and the most complicated awk procedure. We
@@ -205,6 +221,8 @@ wait
 
 # FIXME figure out a way to	account for	refseq strandedness earlier on...
 echo "Calculating Pausing Index"
-awk -F '\t' 'FNR==NR{a[$4]=$5; next} ($4 in a) {print $4,"+",$5/a[$4], $6}' "$GeneOutPos" "$FinalPos" > "$OutFile"
-awk -F '\t' 'FNR==NR{a[$4]=$5; next} ($4 in a) {print $4,"-",$5/a[$4], $6}' "$GeneOutNeg" "$FinalNeg" >> "$OutFile"
+awk -F '\t' 'FNR==NR{a[$4]=$5; next} ($4 in a) {print $4,"+",$5/a[$4], $6}' \
+		"$GeneOutPos" "$FinalPos" > "$OutFile"
+awk -F '\t' 'FNR==NR{a[$4]=$5; next} ($4 in a) {print $4,"-",$5/a[$4], $6}' \
+		"$GeneOutNeg" "$FinalNeg" >> "$OutFile"
 echo "Done $srr $gds"
