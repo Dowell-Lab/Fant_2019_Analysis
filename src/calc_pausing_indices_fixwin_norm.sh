@@ -12,9 +12,9 @@ set -e
 
 usage()
 {
-		echo "calc_pausing_indices_fixwin.sh - a script for calculating fixed-width pausing indices"
+		echo "calc_pausing_indices_fixwin_norm.sh - a script for calculating normalized fixed-width pausing indices"
 		echo "Example:"
-		echo "    ./calc_pausing_indices_fixwin.sh --pus=-100 --pds=300 --gds=2000 --srr=SRR2084576"
+		echo "    ./calc_pausing_indices_fixwin_norm.sh --pus=-100 --pds=300 --gds=2000 --srr=SRR2084576"
 		echo "Usage:"
 		echo "    -h/--help -- Display this help message."
 		echo "    --pus     -- Pausing bases upstream"
@@ -69,7 +69,7 @@ fi
 DirPrefix=/scratch/Users/zama8258
 TmpDir=genefilter_test
 Infile=$DirPrefix/NCBI_RefSeq_UCSC_RefSeq_hg19.bed
-OutFile=$DirPrefix/pause_output/$srr\_pause_ratios_$gds.data
+OutFile=$DirPrefix/pause_output/$srr\_pause_ratios_$gds\_norm.data
 OutGeneFile=$DirPrefix/$TmpDir/tss.bed 
 OutBodyFile=$DirPrefix/$TmpDir/body.bed 
 InterestFile=/scratch/Shares/public/nascentdb/processedv2.0/bedgraphs/$srr.tri.BedGraph
@@ -106,6 +106,7 @@ bedtools map -a $OutBodyFile -b $InterestFileNeg -c 4 -o sum \
 wait
 
 echo Calculating Pausing Index
-awk -F '\t' 'FNR==NR{a[$4]=$7; next} ($4 in a) {print $4,"+",$7/a[$4]}' $GeneOutPos $BodyOutPos > $OutFile
-awk -F '\t' 'FNR==NR{a[$4]=$7; next} ($4 in a) {print $4,"-",$7/a[$4]}' $GeneOutNeg $BodyOutNeg >> $OutFile
+# TODO create this
+awk -F '\t' -v gus="$gus" -v gds="$gds" -v pus="$pus" -v pds="$pds" 'FNR==NR{a[$4]=$7; next} ($4 in a) {print $4,"+",($7/($pus+$pds)/(a[$4]/($gds-$gus))}' $GeneOutPos $BodyOutPos > $OutFile
+awk -F '\t' -v gus="$gus" -v gds="$gds" -v pus="$pus" -v pds="$pds" 'FNR==NR{a[$4]=$7; next} ($4 in a) {print $4,"-",($7/($pus+$pds)/(a[$4]/($gds-$gus))}' $GeneOutNeg $BodyOutNeg >> $OutFile
 

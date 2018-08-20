@@ -1,0 +1,60 @@
+\hypertarget{tfit-output-parameters}{%
+\section{TFit Output Parameters}\label{tfit-output-parameters}}
+
+When run, TFit outputs a file in the format *\_K\_Models\_MLE.tsv, which
+contains a series of parameters. The output is formatted as:
+
+\begin{itemize}
+\tightlist
+\item
+  Single line of:
+\end{itemize}
+
+\begin{verbatim}
+ID|chrom:start-stop|forward coverage, reverse coverage
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  Multiple lines of:
+\end{itemize}
+
+\begin{verbatim}
+model complexity, log_likelihood \
+mu_k sigma_k lambda_k pi_k fp_k w_[p,k],w_[f,k],w_[r,k], b_[f,k] a_[r,k]
+\end{verbatim}
+
+\hypertarget{parameter-descriptions}{%
+\subsection{Parameter Descriptions}\label{parameter-descriptions}}
+
+\begin{itemize}
+\tightlist
+\item
+  \(\sim\text{INT}\): Placed at the start of the output line, this
+  variable represents the model complexity level for the given output
+  parameters.
+\item
+  \(\mu_k\): Predicted Center of Bidir Transcription (Roughly the TSS)
+\item
+  \(\sigma_k\): Variance in \(\mu\).
+\item
+  \(\lambda_k\): Entry Length (Initiation Distance)
+\item
+  \(\pi_k\): Strand Bias
+\item
+  \(fp_k\): Footprint (the distance between bidir peaks)
+\item
+  \(w\): Mixture model weights (how we mix Loading/Initiation/Elongation
+  distributions)
+\item
+  \(l_s = \{l_+,l_-\}\): Predicted elongation components
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \(l_+ = b\): Positive Strand Termination
+  \item
+    \(l_- = a\): Negative Strand Termination
+  \end{itemize}
+\end{itemize}
