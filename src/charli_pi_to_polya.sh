@@ -3,12 +3,24 @@
 # Author: Zachary Maas <zama8258@colorado.edu>
 # Licensed under GPLv3
 
+# FIXME - This is currently our main development version of this
+# script, and is under heavy development
+
+#	TODO
+# -	Combine all modes into 1 script using an argument
+#	- Use	tempfiles instead	of a fixed directory
+# - Add better error handling
+#	-	Make it all faster
+
 # Strict error checking
 set -e
+set -o nounset
+set -o errexit
 
 # Argument Parsing
 # -pus/-pds = pause upstream/downstream
 # -gds = gene upstream
+# FIXME - add back in	-gus with new modes
 
 usage()
 {
