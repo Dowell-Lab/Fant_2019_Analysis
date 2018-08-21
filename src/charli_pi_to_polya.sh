@@ -112,30 +112,38 @@ if $testing; then
 		BodyOutPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_body_pos.bed
 		BodyOutNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_body_neg.bed
 
-		# FIXME - Deprecated
-		# CoverageOutPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_coverage_pos.bed
-		# CoverageOutNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_coverage_neg.bed
-
 		FinalPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_final_pos.bed
 		FinalNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_final_neg.bed
 
 else
+
 		echo "Running in Production Mode."
-		# Variables - PRODUCTION
 		TmpDir=$(mktemp -d)
-		OutGeneFile=$TmpDir/$(uuidgen)
-		OutBodyFile=$TmpDir/$(uuidgen)
-		InterestFilePos=$TmpDir/$(uuidgen)
-		InterestFileNeg=$TmpDir/$(uuidgen)
-		GeneOutPos=$TmpDir/$(uuidgen)
-		GeneOutNeg=$TmpDir/$(uuidgen)
-		BodyOutPos=$TmpDir/$(uuidgen)
-		BodyOutNeg=$TmpDir/$(uuidgen)
-		# FIXME - Deprecated
-		# CoverageOutPos=$TmpDir/$(uuidgen)
-		# CoverageOutNeg=$TmpDir/$(uuidgen)
-		FinalPos=$TmpDir/$(uuidgen)
-		FinalNeg=$TmpDir/$(uuidgen)
+
+		OutGeneFile="$(uuidgen)"
+		mkfifo "$TmpDir""/""$OutGeneFile"
+		OutBodyFile="$(uuidgen)"
+		mkfifo "$TmpDir""/""$OutBodyFile"
+
+		InterestFilePos="$(uuidgen)"
+		mkfifo "$TmpDir""/""$InterestFilePos"
+		InterestFileNeg="$(uuidgen)"
+		mkfifo "$TmpDir""/""$InterestFileNeg"
+
+		GeneOutPos="$(uuidgen)"
+		mkfifo "$TmpDir""/""$GeneOutPos"
+		GeneOutNeg="$(uuidgen)"
+		mkfifo "$TmpDir""/""$GeneOutNeg"
+
+		BodyOutPos="$(uuidgen)"
+		mkfifo "$TmpDir""/""$BodyOutPos"
+		BodyOutNeg="$(uuidgen)"
+		mkfifo "$TmpDir""/""$BodyOutNeg"
+
+		FinalPos="$(uuidgen)"
+		mkfifo "$TmpDir""/""$FinalPos"
+		FinalNeg="$(uuidgen)"
+		mkfifo "$TmpDir""/""$FinalNeg"
 
 		# Clean up temp files on exit
 		function cleanup {
