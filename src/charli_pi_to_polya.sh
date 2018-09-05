@@ -12,11 +12,16 @@
 # - Add better error handling
 #	-	Make it all faster by	pipelining stuff better...
 # - Strip out	redundant	TSS's
+# -	Update all logging messages to include the SRR
+#	-	Update usage message...
 
 # Strict error checking
 set -e
-set -o nounset
+# set -o nounset
 set -o errexit
+#	Assume only	utf-8
+export LC_ALL=C
+# Echo start time
 
 # Argument Parsing
 # -pus/-pds = pause upstream/downstream
@@ -38,7 +43,7 @@ usage()
 }
 
 while [ "$1" != "" ]; do
-    PARAM=$(echo "$1" | awk -F= '{print $1}')
+		PARAM=$(echo "$1" | awk -F= '{print $1}')
 		VALUE=$(echo "$1" | awk -F= '{print $2}')
 		case $PARAM in
 				-h | --help)
@@ -70,8 +75,7 @@ done
 # for multiple modes of operation in a single script.
 gus=$(echo "$pds+1" | bc)
 
-echo "Got parameters:"
-echo "Up: $pus, Down: $pds, Gene Up: $gus, Gene Down: $gds, SRR: $srr"
+echo "[PARAM] Up: $pus, Down: $pds, Gene Up: $gus, Gene Down: $gds, SRR: $srr"
 
 # Make sure we have the necessary modules on the cluster
 if ! type -t bedtools 
@@ -87,7 +91,7 @@ fi
 DirPrefix=/scratch/Users/zama8258
 InterestFile=$srr
 #InterestFile=/scratch/Shares/public/nascentdb/processedv2.0/bedgraphs/$srr.tri.BedGraph
-Infile=$DirPrefix/NCBI_RefSeq_UCSC_RefSeq_hg19.bed
+Infile=$DirPrefix/NCBI_RefSeq_UCSC_RefSeq_hg38.bed
 OutFile=$DirPrefix/pause_output/"$srr"_pause_ratios_$gds.data
 
 
@@ -98,7 +102,7 @@ testing=true
 
 if $testing; then
 		# Variables	-	DEBUG
-		echo "Running in Debugging Mode."
+		echo "[LOG] Running ""$srr"" in Debug Mode"
 		TmpDir=charli_pi
 
 		OutGeneFile=$DirPrefix/$TmpDir/"$srr"_"$gds"_tss.bed
@@ -117,38 +121,28 @@ if $testing; then
 
 else
 
-		echo "Running in Production Mode."
+		echo "[LOG] Running ""$srr"" in Production Mode."
 		TmpDir=$(mktemp -d)
 
-		OutGeneFile="$(uuidgen)"
-		mkfifo "$TmpDir""/""$OutGeneFile"
-		OutBodyFile="$(uuidgen)"
-		mkfifo "$TmpDir""/""$OutBodyFile"
+		OutGeneFile="$TmpDir""/""$(uuidgen)"
+		OutBodyFile="$TmpDir""/""$(uuidgen)"
 
-		InterestFilePos="$(uuidgen)"
-		mkfifo "$TmpDir""/""$InterestFilePos"
-		InterestFileNeg="$(uuidgen)"
-		mkfifo "$TmpDir""/""$InterestFileNeg"
+		InterestFilePos="$TmpDir""/""$(uuidgen)"
+		InterestFileNeg="$TmpDir""/""$(uuidgen)"
 
-		GeneOutPos="$(uuidgen)"
-		mkfifo "$TmpDir""/""$GeneOutPos"
-		GeneOutNeg="$(uuidgen)"
-		mkfifo "$TmpDir""/""$GeneOutNeg"
+		GeneOutPos="$TmpDir""/""$(uuidgen)"
+		GeneOutNeg="$TmpDir""/""$(uuidgen)"
 
-		BodyOutPos="$(uuidgen)"
-		mkfifo "$TmpDir""/""$BodyOutPos"
-		BodyOutNeg="$(uuidgen)"
-		mkfifo "$TmpDir""/""$BodyOutNeg"
+		BodyOutPos="$TmpDir""/""$(uuidgen)"
+		BodyOutNeg="$TmpDir""/""$(uuidgen)"
 
-		FinalPos="$(uuidgen)"
-		mkfifo "$TmpDir""/""$FinalPos"
-		FinalNeg="$(uuidgen)"
-		mkfifo "$TmpDir""/""$FinalNeg"
+		FinalPos="$TmpDir""/""$(uuidgen)"
+		FinalNeg="$TmpDir""/""$(uuidgen)"
 
 		# Clean up temp files on exit
 		function cleanup {
 				rm -rf "$TmpDir"
-				echo "Deleted temporary directory $TmpDir"
+				echo "[LOG] Deleted temporary directory $TmpDir"
 		}
 		# Register the cleanup function to be called on the EXIT signal
 		trap cleanup EXIT
@@ -173,18 +167,18 @@ fi
 # commands on the fly. A sort of bizarre metaprogramming, if you will.
 # FIXME Look at the second awk sequence here. Something doesn't look
 # quite right.
-echo "Prefiltering Reference Sequence..."
+echo "[LOG] Prefiltering ""$srr"
 awk -v OFS='\t' -v pus="$pus" -v pds="$pds" \
 		'{if ($6 == "+") print $1, $2-pus, $2+pds, $4, $5, $6; else print $1, $3-pus, $3+pds, $4, $5, $6}' $Infile \
-		| sort -u -k1,1 -k2,2n | \
+		| sort -k1,1 -k2,2n | \
 		awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4}' \
 				> "$OutBodyFile" &
 awk -v OFS='\t' -v gus="$gus" -v gds="$gds" \
 		'{if ($6 == "+") print $1, $2+gus, $3, $4, $5, $6; else print $1, $3-gus, $3, $4, $5, $6}' $Infile \
-		| sort -u -k1,1 -k2,2n | \
+		| sort -k1,1 -k2,2n | \
 		awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4}' \
 				> "$OutGeneFile" &
-echo "Splitting data file into pos and neg..." &
+echo "[LOG] Splitting data file ""$srr" &
 awk -v OFS='\t' '{if ($4 > 0) print $1, $2, $3, $4}' "$InterestFile" \
 		> "$InterestFilePos" &
 awk -v OFS='\t' '{if ($4 < 0) print $1, $2, $3, $4}' "$InterestFile" \
@@ -193,18 +187,26 @@ wait
 
 # With the first portion of the analysis done, we proceed to calculate
 # the sum of reads in the regions we gathered using awk in the above
-# procedure. This is the slowest part of the script, in my experience.
+# procedure. This is the slowest part of the script, based on current
+# testing. This should be fine (FIXME, maybe), because we already
+# consider the strandedness of the data in the preliminary step of
+# separating strands and calculating a modified reference sequence.
 
-echo "Finding Region Sums..."
+echo "[LOG] Calculating Region Sums ""$srr"
 bedtools map -a "$OutGeneFile" -b "$InterestFilePos" -c 4 -o sum \
-		| awk '($5 != "." && $5 != 0) ' > "$GeneOutPos" &
+		| awk -F '\t' '($5 != "." && $5 != 0) ' > "$GeneOutPos" &
 bedtools map -a "$OutBodyFile" -b "$InterestFilePos" -c 4 -o sum \
-		| awk '($5 != "." && $5 != 0) ' > "$BodyOutPos" &
+		| awk -F '\t' '($5 != "." && $5 != 0) ' > "$BodyOutPos" &
 bedtools map -a "$OutGeneFile" -b "$InterestFileNeg" -c 4 -o sum \
-		| awk '($5 != "." && $5 != 0) ' > "$GeneOutNeg" &
+		| awk -F '\t' '($5 != "." && $5 != 0) ' > "$GeneOutNeg" &
 bedtools map -a "$OutBodyFile" -b "$InterestFileNeg" -c 4 -o sum \
-		| awk '($5 != "." && $5 != 0) ' > "$BodyOutNeg" &
+		| awk -F '\t' '($5 != "." && $5 != 0) ' > "$BodyOutNeg" &
 wait
+
+# Here we calculate the total length of the region for each gene,
+# creating a sum to be used later for normalizing by gene-length in
+# pausing methods that vary the length (by doing things like going all
+# the way to the polyA site).
 
 # With counts for all genes calculated, we can proceed to calculate
 # coverage for every gene that we haven't thrown out (we drop genes
@@ -215,22 +217,30 @@ wait
 # final file for our last step.
 
 # FIXME - Finish Coverage Statistics by dividing by length.
-echo "Calculating Coverage Statistics"
-paste "$BodyOutPos" <(awk 'NR==FNR{a[NR]=$5;next}{print $5+a[FNR]}' \
-													"$GeneOutPos" "$BodyOutPos") > "$FinalPos"	&
-paste "$BodyOutNeg" <(awk 'NR==FNR{a[NR]=$5;next}{print $5+a[FNR]}' \
-													"$GeneOutNeg" "$BodyOutNeg") > "$FinalNeg"	&
-wait
+echo "[LOG] Calculating Coverage Statistics ""$srr"
+paste "$BodyOutPos" \
+			<(awk -F '\t' 'NR==FNR{a[NR]=$5;next}{print $5+a[FNR]}' \
+						"$GeneOutPos" "$BodyOutPos") \
+			<(awk -F '\t' 'NR==FNR{a[NR]=$3-$2;next}{print ($3-$2)+a[FNR]}' \
+						"$GeneOutPos" "$BodyOutPos") | \
+		awk -F '\t' -v OFS='\t' '{print $1, $2, $3, $4, $5, $6/$7}' > "$FinalPos" &
+paste "$BodyOutNeg" \
+			<(awk -F '\t' 'NR==FNR{a[NR]=$5;next}{print $5+a[FNR]}' \
+						"$GeneOutNeg" "$BodyOutNeg") \
+			<(awk -F '\t' 'NR==FNR{a[NR]=$3-$2;next}{print ($3-$2)+a[FNR]}' \
+						"$GeneOutNeg" "$BodyOutNeg") | \
+			awk -F '\t' -v OFS='\t' '{print $1, $2, $3, $4, $5, -($6/$7)}' > "$FinalNeg" &
+	wait
 
-# This is the last step, and the most complicated awk procedure. We
-# use a associative array with the (FIXME?) gene name as the key. Then
-# we can calculate the final pausing index while also retaining our
-# normalized coverage statistics.
+	# This is the last step, and the most complicated awk procedure. We
+	# use a associative array with the (FIXME?) gene name as the key. Then
+	# we can calculate the final pausing index while also retaining our
+	# normalized coverage statistics.
 
-# FIXME figure out a way to	account for	refseq strandedness earlier on...
-echo "Calculating Pausing Index"
-awk -F '\t' 'FNR==NR{a[$4]=$5; next} ($4 in a) {print $4,"+",$5/a[$4], $6}' \
-		"$GeneOutPos" "$FinalPos" > "$OutFile"
-awk -F '\t' 'FNR==NR{a[$4]=$5; next} ($4 in a) {print $4,"-",$5/a[$4], $6}' \
-		"$GeneOutNeg" "$FinalNeg" >> "$OutFile"
-echo "Done $srr $gds"
+	# FIXME figure out a way to	account for	refseq strandedness earlier on...
+	echo "[LOG] Calculating Pausing Index ""$srr"
+	awk -F '\t' 'FNR==NR{a[$4]=$5; next} ($4 in a) {print $4,"+",$5/a[$4], $6}' \
+			"$GeneOutPos" "$FinalPos" | sort -t$'\t' -k1,1 > "$OutFile"
+	awk -F '\t' 'FNR==NR{a[$4]=$5; next} ($4 in a) {print $4,"-",$5/a[$4], $6}' \
+			"$GeneOutNeg" "$FinalNeg" | sort -t$'\t' -k1,1 >> "$OutFile"
+	echo "[LOG] Done $srr $gds"
