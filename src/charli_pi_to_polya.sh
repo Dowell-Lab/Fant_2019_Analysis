@@ -105,8 +105,10 @@ if $testing; then
 		echo "[LOG] Running ""$srr"" in Debug Mode"
 		TmpDir=charli_pi
 
-		OutGeneFile=$DirPrefix/$TmpDir/"$srr"_"$gds"_tss.bed
-		OutBodyFile=$DirPrefix/$TmpDir/"$srr"_"$gds"_body.bed
+		OutGenePosFile=$DirPrefix/$TmpDir/"$srr"_"$gds"_pos_tss.bed
+		OutBodyPosFile=$DirPrefix/$TmpDir/"$srr"_"$gds"_pos_body.bed
+		OutGeneNegFile=$DirPrefix/$TmpDir/"$srr"_"$gds"_neg_tss.bed
+		OutBodyNegFile=$DirPrefix/$TmpDir/"$srr"_"$gds"_neg_body.bed
 
 		InterestFilePos=$DirPrefix/$TmpDir/"$srr"_"$gds"_interest_pos.bed
 		InterestFileNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_interest_neg.bed
@@ -124,8 +126,10 @@ else
 		echo "[LOG] Running ""$srr"" in Production Mode."
 		TmpDir=$(mktemp -d)
 
-		OutGeneFile="$TmpDir""/""$(uuidgen)"
-		OutBodyFile="$TmpDir""/""$(uuidgen)"
+		OutGenePosFile="$TmpDir""/""$(uuidgen)"
+		OutBodyPosFile="$TmpDir""/""$(uuidgen)"
+		OutGenePosFile="$TmpDir""/""$(uuidgen)"
+		OutBodyPosFile="$TmpDir""/""$(uuidgen)"
 
 		InterestFilePos="$TmpDir""/""$(uuidgen)"
 		InterestFileNeg="$TmpDir""/""$(uuidgen)"
@@ -168,16 +172,30 @@ fi
 # FIXME Look at the second awk sequence here. Something doesn't look
 # quite right.
 echo "[LOG] Prefiltering ""$srr"
-awk -v OFS='\t' -v pus="$pus" -v pds="$pds" \
-		'{if ($6 == "+") print $1, $2-pus, $2+pds, $4, $5, $6; else print $1, $3-pus, $3+pds, $4, $5, $6}' $Infile \
+grep NM	"$Infile" | \
+		awk -v OFS='\t' -v pus="$pus" -v pds="$pds" \
+				'{if ($6 == "+") print $1, $2-pus, $2+pds, $4, $5, $6}' \
 		| sort -k1,1 -k2,2n | \
 		awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4}' \
-				> "$OutBodyFile" &
-awk -v OFS='\t' -v gus="$gus" -v gds="$gds" \
-		'{if ($6 == "+") print $1, $2+gus, $3, $4, $5, $6; else print $1, $3-gus, $3, $4, $5, $6}' $Infile \
+				> "$OutBodyPosFile" &
+grep NM |	\
+		awk -v OFS='\t' -v gus="$gus" -v gds="$gds" \
+				'{if ($6 == "+") print $1, $2+gus, $3, $4, $5, $6}' $Infile \
+		| grep NM | sort -k1,1 -k2,2n | \
+		awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4}' \
+				> "$OutGenePosFile" &
+grep NM	"$Infile" | \
+		awk -v OFS='\t' -v pus="$pus" -v pds="$pds" \
+				'{if ($6 == "-") print $1, $3-pus, $3+pds, $4, $5, $6}' \
 		| sort -k1,1 -k2,2n | \
 		awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4}' \
-				> "$OutGeneFile" &
+				> "$OutBodyNegFile" &
+grep NM |	\
+		awk -v OFS='\t' -v gus="$gus" -v gds="$gds" \
+				'{if ($6 == "-") print $1, $3-gus, $3, $4, $5, $6}' $Infile \
+		| grep NM | sort -k1,1 -k2,2n | \
+		awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4}' \
+				> "$OutGeneNegFile" &
 echo "[LOG] Splitting data file ""$srr" &
 awk -v OFS='\t' '{if ($4 > 0) print $1, $2, $3, $4}' "$InterestFile" \
 		> "$InterestFilePos" &
@@ -193,13 +211,13 @@ wait
 # separating strands and calculating a modified reference sequence.
 
 echo "[LOG] Calculating Region Sums ""$srr"
-bedtools map -a "$OutGeneFile" -b "$InterestFilePos" -c 4 -o sum \
+bedtools map -a "$OutGenePosFile" -b "$InterestFilePos" -c 4 -o sum \
 		| awk -F '\t' '($5 != "." && $5 != 0) ' > "$GeneOutPos" &
-bedtools map -a "$OutBodyFile" -b "$InterestFilePos" -c 4 -o sum \
+bedtools map -a "$OutBodyPosFile" -b "$InterestFilePos" -c 4 -o sum \
 		| awk -F '\t' '($5 != "." && $5 != 0) ' > "$BodyOutPos" &
-bedtools map -a "$OutGeneFile" -b "$InterestFileNeg" -c 4 -o sum \
+bedtools map -a "$OutGeneNegFile" -b "$InterestFileNeg" -c 4 -o sum \
 		| awk -F '\t' '($5 != "." && $5 != 0) ' > "$GeneOutNeg" &
-bedtools map -a "$OutBodyFile" -b "$InterestFileNeg" -c 4 -o sum \
+bedtools map -a "$OutBodyNegFile" -b "$InterestFileNeg" -c 4 -o sum \
 		| awk -F '\t' '($5 != "." && $5 != 0) ' > "$BodyOutNeg" &
 wait
 
@@ -230,17 +248,17 @@ paste "$BodyOutNeg" \
 			<(awk -F '\t' 'NR==FNR{a[NR]=$3-$2;next}{print ($3-$2)+a[FNR]}' \
 						"$GeneOutNeg" "$BodyOutNeg") | \
 			awk -F '\t' -v OFS='\t' '{print $1, $2, $3, $4, $5, -($6/$7)}' > "$FinalNeg" &
-	wait
+wait
 
-	# This is the last step, and the most complicated awk procedure. We
-	# use a associative array with the (FIXME?) gene name as the key. Then
-	# we can calculate the final pausing index while also retaining our
-	# normalized coverage statistics.
+# This is the last step, and the most complicated awk procedure. We
+# use a associative array with the (FIXME?) gene name as the key. Then
+# we can calculate the final pausing index while also retaining our
+# normalized coverage statistics.
 
-	# FIXME figure out a way to	account for	refseq strandedness earlier on...
-	echo "[LOG] Calculating Pausing Index ""$srr"
-	awk -F '\t' 'FNR==NR{a[$4]=$5; next} ($4 in a) {print $4,"+",$5/a[$4], $6}' \
-			"$GeneOutPos" "$FinalPos" | sort -t$'\t' -k1,1 > "$OutFile"
-	awk -F '\t' 'FNR==NR{a[$4]=$5; next} ($4 in a) {print $4,"-",$5/a[$4], $6}' \
-			"$GeneOutNeg" "$FinalNeg" | sort -t$'\t' -k1,1 >> "$OutFile"
-	echo "[LOG] Done $srr $gds"
+# FIXME figure out a way to	account for	refseq strandedness earlier on...
+echo "[LOG] Calculating Pausing Index ""$srr"
+awk -F '\t' 'FNR==NR{a[$4]=$5; next} ($4 in a) {print $4,"+",$5/a[$4], $6}' \
+		"$GeneOutPos" "$FinalPos" | sort -t$'\t' -k1,1 > "$OutFile"
+awk -F '\t' 'FNR==NR{a[$4]=$5; next} ($4 in a) {print $4,"-",$5/a[$4], $6}' \
+		"$GeneOutNeg" "$FinalNeg" | sort -t$'\t' -k1,1 >> "$OutFile"
+echo "[LOG] Done $srr $gds"
