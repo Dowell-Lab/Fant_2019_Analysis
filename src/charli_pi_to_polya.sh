@@ -172,28 +172,24 @@ fi
 # FIXME Look at the second awk sequence here. Something doesn't look
 # quite right.
 echo "[LOG] Prefiltering ""$srr"
-grep NM	"$Infile" | \
-		awk -v OFS='\t' -v pus="$pus" -v pds="$pds" \
-				'{if ($6 == "+") print $1, $2-pus, $2+pds, $4, $5, $6}' \
+awk -v OFS='\t' -v pus="$pus" -v pds="$pds" \
+		'{if ($6 == "+") print $1, $2-pus, $2+pds, $4, $5, $6}' "$Infile"\
 		| sort -k1,1 -k2,2n | \
 		awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4}' \
 				> "$OutBodyPosFile" &
-grep NM |	\
-		awk -v OFS='\t' -v gus="$gus" -v gds="$gds" \
-				'{if ($6 == "+") print $1, $2+gus, $3, $4, $5, $6}' $Infile \
-		| grep NM | sort -k1,1 -k2,2n | \
+awk -v OFS='\t' -v gus="$gus" -v gds="$gds" \
+		'{if ($6 == "+") print $1, $2+gus, $3, $4, $5, $6}' "$Infile" \
+		| sort -k1,1 -k2,2n | \
 		awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4}' \
 				> "$OutGenePosFile" &
-grep NM	"$Infile" | \
-		awk -v OFS='\t' -v pus="$pus" -v pds="$pds" \
-				'{if ($6 == "-") print $1, $3-pus, $3+pds, $4, $5, $6}' \
+awk -v OFS='\t' -v pus="$pus" -v pds="$pds" \
+		'{if ($6 == "-") print $1, $3-pus, $3+pds, $4, $5, $6}' "$Infile" \
 		| sort -k1,1 -k2,2n | \
 		awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4}' \
 				> "$OutBodyNegFile" &
-grep NM |	\
-		awk -v OFS='\t' -v gus="$gus" -v gds="$gds" \
-				'{if ($6 == "-") print $1, $3-gus, $3, $4, $5, $6}' $Infile \
-		| grep NM | sort -k1,1 -k2,2n | \
+awk -v OFS='\t' -v gus="$gus" -v gds="$gds" \
+		'{if ($6 == "-") print $1, $3-gus, $3, $4, $5, $6}' "$Infile" \
+		| sort -k1,1 -k2,2n | \
 		awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4}' \
 				> "$OutGeneNegFile" &
 echo "[LOG] Splitting data file ""$srr" &
