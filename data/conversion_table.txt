@@ -1,4 +1,3 @@
-Gene name	RefSeq mRNA ID
 MT-TF	
 MT-RNR1	
 MT-TV	
