@@ -7,25 +7,25 @@
 
 ## TATA Box
 bash /scratch/Users/zama8258/pause_analysis_src/filter_by_motif.sh \
-		 --start=-50 --end=0 \
+		 --start=-50 --end=25 \
 		 --fasta=/scratch/Users/zama8258/hg38.fa \
-		 --motif=TATAAW \
+		 --motif=WWWW \
 		 --file=/scratch/Users/zama8258/NCBI_RefSeq_UCSC_RefSeq_hg38.bed
 ## Inr
 bash /scratch/Users/zama8258/pause_analysis_src/filter_by_motif.sh \
-		 --start=-10 --end=10 \
+		 --start=-50 --end=50 \
 		 --fasta=/scratch/Users/zama8258/hg38.fa \
 		 --motif=BBCABW \
 		 --file=/scratch/Users/zama8258/NCBI_RefSeq_UCSC_RefSeq_hg38.bed
 ## MTE
 bash /scratch/Users/zama8258/pause_analysis_src/filter_by_motif.sh \
-		 --start=0 --end=100 \
+		 --start=10 --end=100 \
 		 --fasta=/scratch/Users/zama8258/hg38.fa \
-		 --motif=CSARCSSAACGS \
+		 --motif=CGANC....CGG \
 		 --file=/scratch/Users/zama8258/NCBI_RefSeq_UCSC_RefSeq_hg38.bed
 ## DPE
 bash /scratch/Users/zama8258/pause_analysis_src/filter_by_motif.sh \
-		 --start=25 --end=40 \
+		 --start=10 --end=100 \
 		 --fasta=/scratch/Users/zama8258/hg38.fa \
 		 --motif=RGWYVT \
 		 --file=/scratch/Users/zama8258/NCBI_RefSeq_UCSC_RefSeq_hg38.bed
