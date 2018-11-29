@@ -28,7 +28,7 @@ mu_k sigma_k lambda_k pi_k fp_k w_[p,k],w_[f,k],w_[r,k], b_[f,k] a_[r,k]
 - $l_s = \{l_+,l_-\}$: Predicted elongation components
   - $l_+ = b$: Positive Strand Termination
   - $l_- = a$: Negative Strand Termination
-    
+
 - TPM / FPKM for transcriptional activity (uniform alone)
   - Mu, a, b to bedfile
     - C-f, C-b
