@@ -85,15 +85,12 @@ fi
 ################################################################################
 ################################################################################
 
-## Hey zach, you dummy. Test this. FIXME TODO FIXME
-
 # Variables we always need
 DirPrefix=/scratch/Users/zama8258
 InterestFile=$srr
 #InterestFile=/scratch/Shares/public/nascentdb/processedv2.0/bedgraphs/$srr.tri.BedGraph
 Infile=$DirPrefix/NCBI_RefSeq_UCSC_RefSeq_hg38.bed
 OutFile=$DirPrefix/pause_output/"$srr"_pause_ratios_$gds.data
-
 
 #	During debugging, we write out all output to disk so that we can
 #	examine it and see what's going on with our script changes. This is
