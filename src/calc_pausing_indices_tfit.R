@@ -4,12 +4,12 @@
 args <- commandArgs(TRUE)
 
 ## Default setting when no arguments passed
-if(length(args) < 1) {
+if (length(args) < 1) {
     args <- c("--help")
 }
 
 ## Help section
-if("--help" %in% args) {
+if ("--help" %in% args) {
     cat("
 Calculate Pausing Indices using Core 2008 Method
 
@@ -19,8 +19,8 @@ Arguments:
 
 Example:
    ./calc_pausing_indices.r --srr=SRR123456 \n\n")
-
-    q(save="no")
+    
+    q(save = "no")
 }
 
 ## Parse arguments (we expect the form --arg=value)
@@ -29,20 +29,19 @@ argsDF <- as.data.frame(do.call("rbind", parseArgs(args)))
 argsL <- as.list(as.character(argsDF$V2))
 srr <- argsL
 
-if(is.null(srr)) {
+if (is.null(srr)) {
     warningr("You must provide an SRR")
     q()
 }
 
 message("Libpaths:")
-.libPaths( c( .libPaths(), "/Users/zama8258/R/") )
+.libPaths(c(.libPaths(), "/Users/zama8258/R/"))
 .libPaths()
 message("Established libpaths")
 
 suppressMessages(library(tidyverse))
 ## suppressMessages(library(GenomicFeatures))
-## suppressMessages(library(GenomicRanges))
-## suppressMessages(library(rtracklayer))
+## suppressMessages(library(GenomicRanges)) suppressMessages(library(rtracklayer))
 ## suppressMessages(library(groHMM))
 library(tfitParser)
 

@@ -1,14 +1,14 @@
-suppressMessages( library("tidyverse") )
+suppressMessages(library("tidyverse"))
 ## Parse arguments
 args <- commandArgs(TRUE)
 
 ## Default setting when no arguments passed
-if(length(args) < 1) {
+if (length(args) < 1) {
     args <- c("--help")
 }
 
 ## Help section
-if("--help" %in% args) {
+if ("--help" %in% args) {
     cat("
       R Argument Parsing
  
@@ -19,7 +19,7 @@ if("--help" %in% args) {
       Example:
       ./script.r --srr=SRR123456 \n\n")
     
-    q(save="no")
+    q(save = "no")
 }
 
 ## Parse arguments (we expect the form --arg=value)
@@ -27,7 +27,7 @@ parseArgs <- function(x) strsplit(sub("^--", "", x), "=")
 argsDF <- as.data.frame(do.call("rbind", parseArgs(args)))
 argsL <- as.list(as.character(argsDF$V2))
 
-if(is.null(argsL)) {
+if (is.null(argsL)) {
     print("You must provide an SRR")
     q()
 }

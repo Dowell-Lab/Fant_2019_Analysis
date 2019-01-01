@@ -1,6 +1,6 @@
 ## Bootstrapping script to install all necessary packages
 
-.libPaths( c( .libPaths(), "/Users/zama8258/R/") )
+.libPaths(c(.libPaths(), "/Users/zama8258/R/"))
 .libPaths()
 message("Established libpaths")
 
