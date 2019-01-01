@@ -35,6 +35,7 @@ usage()
 		echo "    ./calc_pausing_indices_fixwin.sh --pus=-100 --pds=300 --gds=2000 --srr=SRR2084556"
 		echo "Usage:"
 		echo "    -h/--help -- Display this help message."
+		echo "    --ref     -- Reference file to use"
 		echo "    --pus     -- Pausing bases upstream"
 		echo "    --pds     -- Pausing bases downstream"
 		echo "    --gds     -- Gene bases downstream"
@@ -49,6 +50,9 @@ while [ "$1" != "" ]; do
 				-h | --help)
 						usage
 						exit
+						;;
+				--ref)
+						ref=$VALUE
 						;;
 				--pus)
 						pus=$VALUE
@@ -87,9 +91,10 @@ fi
 
 # Variables we always need
 DirPrefix=/scratch/Users/zama8258
-InterestFile=$srr
+InterestFile=/scratch/Users/zama8258/processed_nascent/bedtools/"$srr"
 #InterestFile=/scratch/Shares/public/nascentdb/processedv2.0/bedgraphs/$srr.tri.BedGraph
-Infile=$DirPrefix/NCBI_RefSeq_UCSC_RefSeq_hg38.bed
+Infile=$ref
+# Infile=$DirPrefix/NCBI_RefSeq_UCSC_RefSeq_hg38.bed
 OutFile=$DirPrefix/pause_output/"$srr"_pause_ratios_$gds.data
 
 #	During debugging, we write out all output to disk so that we can
