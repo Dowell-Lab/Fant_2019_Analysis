@@ -175,24 +175,5 @@ sort -rnk7 "$FPKMCommonID" | sort -usk8 |
 
 logr "Final Genes: ""$(wc -l "$FinalOut" | awk '{print $1}')"
 
-## Here we perform a basic unit test to make sure that our output is
-## valid. Simply, we count the lines in each output file and make sure
-## that the number of lines is equivalent to the number of
-# logr "Verifying that Output is Valid"
-# read -r PosLines <<< "$(wc -l "$PosStrandFinalSorted" | awk '{print $1}')"
-# read -r NegLines <<< "$(wc -l "$NegStrandFinalSorted" | awk '{print $1}')"
-# read -r PosUniqLines <<< "$(awk '{print $4}' "$PosStrandFinalSorted" |
-# 															 uniq -c | awk '{sum+=$1} END {print sum}')"
-# read -r NegUniqLines <<< "$(awk '{print $4}' "$NegStrandFinalSorted" |
-# 															 uniq -c | awk '{sum+=$1} END {print sum}')"
-
-# if [ "$PosLines" -eq "$PosUniqLines" ] && [ "$NegLines" -eq "$NegUniqLines" ]; then
-# 		logr "Passed tests:"
-# else
-# 		logr "Failed tests:"
-# fi
-# logr "Pos Lines: ""$PosLines"", and Uniq Lines: ""$PosUniqLines"
-# logr "Neg Lines: ""$NegLines"", and Uniq Lines: ""$NegUniqLines"
-
 ## If we made it this far, we are done
 logr "Done executing"

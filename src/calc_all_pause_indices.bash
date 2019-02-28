@@ -42,3 +42,8 @@ bash /scratch/Users/zama8258/pause_analysis_src/charli_pi_to_polya.sh \
 		 --gds=PROD \
 		 --srr=PO_2_S2_R1_001.trim.bedGraph &
 wait
+
+# ScriptDir=/scratch/Users/zama8258/pause_analysis_src
+# python "$ScriptDir"/convert_isoform.py -l "$ScriptDir"/refseq_to_common_id.txt \
+# 			 -f "$StrandsMerged" \
+# 			 -o "$FPKMCommonID"

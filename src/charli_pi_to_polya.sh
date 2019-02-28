@@ -1,12 +1,7 @@
 #!/bin/bash
 # Pausing Ratio Calculator
 # Author: Zachary Maas <zama8258@colorado.edu>
-# Licensed under GPLv3
-
-# FIXME - This is currently our main development version of this
-# script, and is under heavy development
-
-#	TODO
+# TODO
 # -	Combine all modes into 1 script using an argument
 #	- Use	tempfiles instead	of a fixed directory
 # - Add better error handling
@@ -130,8 +125,8 @@ else
 
 		OutGenePosFile="$TmpDir""/""$(uuidgen)"
 		OutBodyPosFile="$TmpDir""/""$(uuidgen)"
-		OutGenePosFile="$TmpDir""/""$(uuidgen)"
-		OutBodyPosFile="$TmpDir""/""$(uuidgen)"
+		OutGeneNegFile="$TmpDir""/""$(uuidgen)"
+		OutBodyNegFile="$TmpDir""/""$(uuidgen)"
 
 		InterestFilePos="$TmpDir""/""$(uuidgen)"
 		InterestFileNeg="$TmpDir""/""$(uuidgen)"
@@ -163,16 +158,11 @@ fi
 #	later. At the same time, we split our datafile into a stranded
 #	format to accomplish the same thing.
 
-# FIXME - Does this double-calculate because we don't automatically
-# assume strandedness? Is this a limitation of the fixed-window protocol?
-
 # TODO This step is the prime location for breaking apart this thing
 # to have mode support. I think the easiest way to do this might just
 # be to break apart the awk commands for each respective mode and use
 # variable expansion inside other variable expansion to replace the
 # commands on the fly. A sort of bizarre metaprogramming, if you will.
-# FIXME Look at the second awk sequence here. Something doesn't look
-# quite right.
 echo "[LOG] Prefiltering ""$srr"
 awk -v OFS='\t' -v pus="$pus" -v pds="$pds" \
 		'{if ($6 == "+") print $1, $2-pus, $2+pds, $4, $5, $6}' "$Infile"\
@@ -232,7 +222,7 @@ wait
 # process substitution, we immediately pipe those output values into a
 # final file for our last step.
 
-# FIXME - Finish Coverage Statistics by dividing by length.
+# Finish Coverage Statistics by dividing by length.
 echo "[LOG] Calculating Coverage Statistics ""$srr"
 paste "$BodyOutPos" \
 			<(awk -F '\t' 'NR==FNR{a[NR]=$5;next}{print $5+a[FNR]}' \

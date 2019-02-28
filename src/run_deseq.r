@@ -1,22 +1,79 @@
 ## Script to run DESeq2 Maintainter: Zachary Maas <zama8258@colorado.edu> Licensed
 ## under GPLv3
 
+#######################
+## Preliminary Setup ##
+#######################
+
 library("tidyverse")
 library("DESeq2")
 
+## To filter out only the genes we've used and convert to common ID
+idConvert <- read_delim("/scratch/Users/zama8258/pause_analysis_src/refseq_to_common_id.txt",
+                        col_names = c("rowname", "common"), delim = " ")
+ids <- read_delim("C413_1_S3_R1_001.trim.bedGraph_pause_ratios_PROD.data",
+                  col_names = c("rowname", "strand", "c_1_PROD", "coverage_c1_PROD"), delim = " ") %>%
+    subset(select = rowname)
 
-seqdata <- read.delim("counts_fix.txt", stringsAsFactors = FALSE, header = TRUE, 
-    row.names = 1)
+#################################################
+## Initial Processing for Correct Size Factors ##
+#################################################
 
-countdata <- seqdata[, 6:ncol(seqdata)]
-countdata <- as.matrix(countdata)
+## We have to fix the counts table by removing the first row, hence "counts_fix.txt"
+correct_seqdata <- read.delim("counts_both_fix.txt", stringsAsFactors = FALSE, header = TRUE,
+                              row.names = 1)
+## Then, we filter to only include the resolved isoforms
+correct_df <- as.tibble(rownames_to_column(correct_seqdata))
+correct_df <- inner_join(ids, correct_df, by="rowname")
+correct_df <- inner_join(correct_df, idConvert, by = "rowname") %>% subset(select = -c(rowname)) %>%
+    distinct(common, .keep_all = TRUE)
+correct_dt <- data.frame(correct_df)
+rownames(correct_dt) <- correct_dt$common
+correct_dt$common <- NULL
 
-condition <- factor(c(rep("untreated", 2), rep("treated", 2)))
-coldata <- data.frame(row.names = colnames(countdata), condition)
+## Now, actually perform DE-Seq
+correct_countdata <- correct_dt[, 6:ncol(correct_dt)]
+correct_countdata <- as.matrix(correct_countdata)
 
-dds <- DESeqDataSetFromMatrix(countData = countdata, colData = coldata, design = ~condition)
+condition <- factor(c(rep("treated", 2), rep("untreated", 2)), levels=c("untreated", "treated"))
+correct_coldata <- data.frame(row.names = colnames(correct_countdata), condition)
 
+cds <- DESeqDataSetFromMatrix(countData = correct_countdata, colData = correct_coldata, design = ~condition)
+cds <- DESeq(cds)
+
+## Extract the size factors
+sizes <- c(sizeFactors(cds))
+
+###########################################################
+## Then, use those size factors for the full set of data ##
+###########################################################
+
+## We have to fix the counts table by removing the first row, hence "counts_fix.txt"
+full_seqdata <- read.delim("counts_full_fix.txt", stringsAsFactors = FALSE, header = TRUE,
+                           row.names = 1)
+## Then, we filter to only include the resolved isoforms
+full_df <- as.tibble(rownames_to_column(full_seqdata))
+full_df <- inner_join(ids, full_df, by="rowname")
+full_df <- inner_join(full_df, idConvert, by = "rowname") %>% subset(select = -c(rowname)) %>%
+    distinct(common, .keep_all = TRUE)
+full_dt <- data.frame(full_df)
+rownames(full_dt) <- full_dt$common
+full_dt$common <- NULL
+
+## Now, actually perform DE-Seq
+full_countdata <- full_dt[, 6:ncol(full_dt)]
+full_countdata <- as.matrix(full_countdata)
+
+condition <- factor(c(rep("treated", 2), rep("untreated", 2)), levels=c("untreated", "treated"))
+full_coldata <- data.frame(row.names = colnames(full_countdata), condition)
+
+dds <- DESeqDataSetFromMatrix(countData = full_countdata, colData = full_coldata, design = ~condition)
+sizeFactors(dds) <- sizes
 dds <- DESeq(dds)
+
+######################################################
+## With Proper Estimates, we can generate a MA Plot ##
+######################################################
 
 res <- results(dds)
 table(res$padj < 0.05)
@@ -64,25 +121,8 @@ volcanoplot(resdata, lfcthresh = 1, sigthresh = 0.05, textcx = 0.8, xlim = c(-2.
     2))
 dev.off()
 
-## High Expression: idx <- c(4651, 1562, 59, 154) 'NR_003051' 'NR_146151'
-## 'NR_137294' 'NM_018667' RMRP, RNA45SN3, RNR1, SMPD3
-
-## Low Expression: idx <- c(11, 13, 2, 2127) 'NM_001270520' 'NM_130900'
-## 'NM_001144966' 'NM_003528' DAAM1, RAET1L, NEDD4L, HIST2H2BE
-
-## TOP: 95 245 327 339 421 438 481 763 942 1282 1591 1721 'NR_002586' 'NR_002450'
-## 'NR_002918' 'NR_003940' 'NM_020643' 'NM_052846' 'NM_001001710' 'NM_080701'
-## 'NM_053050' 'NR_136301' 'NR_031729' 'NM_020862' SNORA63 SNORD68 SNORA48 SNORD80
-## EMILIN3 FAM166A TREX2 MRPL53 LOC101929748 MIR1908 LRFN1
-
-## BOTTOM: 45 94 98 182 190 257 311 441 476 937 971 1365 'NM_006795' 'NR_045566'
-## 'NM_001199954' 'NM_006389' 'NM_015299' 'NM_001122636' 'NR_038387' 'NR_024367'
-## 'NM_139072' 'NM_003366' 'NM_000700' 'NM_021009' EHD1 BBS4 ACTG1 HYOU1 KHNYN
-## GALNT9 LINC00886 LINC00111 DNER UQCRC2 ANXA1 UBC
-
-cat(rownames(subset(subset(res, pvalue < 0.001), log2FoldChange < 0)), sep = "\n")
-cat(rownames(subset(subset(res, pvalue < 0.001), log2FoldChange > 0)), sep = "\n")
-## cat(rownames(subset(res, pvalue < 0.01)), sep='\n')
+cat(rownames(subset(subset(res, pvalue < 0.01), log2FoldChange < 0)), sep = "\n")
+cat(rownames(subset(subset(res, pvalue < 0.01), log2FoldChange > 0)), sep = "\n")
 
 length(rownames(subset(subset(res, pvalue < 0.01), log2FoldChange < 0)))
 length(rownames(subset(subset(res, pvalue < 0.01), log2FoldChange > 0)))
