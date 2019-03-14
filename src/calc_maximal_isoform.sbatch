@@ -42,6 +42,12 @@ RefSeq=/scratch/Shares/dowell/nascent/hg38/hg38_refseq.bed
 ## script from, so we can call other scripts in the	same directory.
 ScriptDir=/scratch/Users/zama8258/pause_analysis_src
 
+## This is a scratch directory that we use to hold temporary files.
+ScratchDir=/scratch/Users/zama8258/processed_nascent/scratch
+
+## This is the output directory
+OutDir=/scratch/Users/zama8258/processed_nascent/fpkm
+
 #####################################
 ## Generate	Temporary Files in RAM ##
 #####################################
@@ -57,12 +63,10 @@ PosRefFile="$TmpDir""/""$(uuidgen)"
 NegRefFile="$TmpDir""/""$(uuidgen)"
 
 RootName=$(basename "$InterestFile" .bam)
-# PosStrandSums="$TmpDir""/""$(uuidgen)"
-# NegStrandSums="$TmpDir""/""$(uuidgen)"
 
 # Cache the sum files	because they take the longest to generate
-PosStrandSums=/scratch/Users/zama8258/processed_nascent/scratch/"$RootName".pos.count
-NegStrandSums=/scratch/Users/zama8258/processed_nascent/scratch/"$RootName".neg.count
+PosStrandSums="$ScratchDir"/"$RootName".pos.count
+NegStrandSums="$ScratchDir"/"$RootName".neg.count
 
 PosCountsMapped=0
 NegCountsMapped=0
@@ -76,12 +80,12 @@ NegStrandMillionsNormalizedSums="$TmpDir""/""$(uuidgen)"
 PosStrandFpkmNormalizedSums="$TmpDir""/""$(uuidgen)"
 NegStrandFpkmNormalizedSums="$TmpDir""/""$(uuidgen)"
 
-PosStrandFinalSorted=/scratch/Users/zama8258/processed_nascent/scratch/"$RootName".pos.maxiso
-NegStrandFinalSorted=/scratch/Users/zama8258/processed_nascent/scratch/"$RootName".neg.maxiso
+PosStrandFinalSorted="$ScratchDir"/"$RootName".pos.maxiso
+NegStrandFinalSorted="$ScratchDir"/"$RootName".neg.maxiso
 
-StrandsMerged=/scratch/Users/zama8258/processed_nascent/scratch/"$RootName".merge.maxiso
-FPKMCommonID=/scratch/Users/zama8258/processed_nascent/scratch/"$RootName".merge.maxiso.common
-FinalOut=/scratch/Users/zama8258/processed_nascent/fpkm/"$RootName".isoform_max.bed
+StrandsMerged="$ScratchDir"/"$RootName".merge.maxiso
+FPKMCommonID="$ScriptDir"/"$RootName".merge.maxiso.common
+FinalOut="$OutDir"/"$RootName".isoform_max.bed
 
 # Clean up temp files on exit
 function cleanup {
@@ -115,7 +119,7 @@ if [ ! -f "$InterestFile".bai ]; then
 		samtools index "$InterestFile"
 fi
 
-if [ -z "$PosStrandSums" ] || [ -z "$NegStrandSums" ]; then
+if [ ! -f "$PosStrandSums" ] || [ ! -f "$NegStrandSums" ]; then
 		## Here, we construct a bedfile from our input BAM, in order to
 		## normalize it by FPKM. We do this using bedtools multicov on the
 		## sample in a strand specific manner. Note that bedtools multicov

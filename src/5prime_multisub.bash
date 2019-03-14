@@ -1,4 +1,4 @@
-#!env bash
+#!/bin/bash
 
 echo "Submitting Multiple FStitch Jobs for TAF1 Knockdown"
 c1=C413_1_S3_R1_001.trim.sorted.bam

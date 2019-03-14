@@ -25,10 +25,11 @@ parser$add_argument("-o", "--output", action="store", dest="outfile",
                     help="The output file name.")
 args <- parser$parse_args()
 
-regions <- c(args$regions)
+## Debug here
+regions <- args$regions
 outfile <- args$outfile
-print(paste0("Regions: ", regions))
-print(paste0("Out: ", outfile))
+print(paste0("Regions: ", regions, " ", typeof(regions)))
+print(paste0("Out: ", outfile, " ", typeof(outfile)))
 
 library("metagene")
 
@@ -38,17 +39,18 @@ p2 <- "/scratch/Users/zama8258/processed_nascent_testing/mapped/bams/PO_2_S2_R1_
 c1 <- "/scratch/Users/zama8258/processed_nascent_testing/mapped/bams/C413_1_S3_R1_001.sorted.bam"
 c2 <- "/scratch/Users/zama8258/processed_nascent_testing/mapped/bams/C413_2_S4_R1_001.sorted.bam"
 
-bam_files = c(p1, p2, c1, c2)
+bam_files <- c(p1, p2, c1, c2)
 ## regions <- c("/scratch/Users/zama8258/processed_nascent/fpkm/metagene_regions.bed")
 ## regions <- c("/scratch/Users/zama8258/processed_nascent/fpkm/top500.bed")
 design <- data.frame(Samples = c(p1, p2, c1, c2),
                      control = c(1,1,0,0), treatment = c(0,0,1,1))
 
 print("Generating Metagene")
-mg <- metagene$new(regions = regions,
+mg <- metagene$new(regions = c(regions),
                    bam_files = bam_files,
-                   force_seqlevels = TRUE)
-
+                   force_seqlevels = TRUE,
+                   cores = 32,
+                   verbose = TRUE)
 mg$produce_table(design = design, flip_regions = TRUE)
 
 print("Plotting Metagene")

@@ -24,28 +24,39 @@
 #SBATCH --mem=32gb
 #SBATCH --mail-user=zama8258@colorado.edu
 
+# Handle Errors Properly:
+# -e - exits on the first error
+# -u - fails when unset variables are called
+# -o pipefail - fails when error in a pipe
 set -euo pipefail
 
-function logr {
+# Recently tweaked for better POSIX compliance.
+function logr() {
     echo "[""$(date -d@$SECONDS -u +%H:%M:%S)""]: $*"
 }
 
-module load bedtools
+# Dynamically load bedtools if it isn't available
+if ! type -t bedtools; then
+		module load bedtools
+fi
 
-## Variable setup
-offset=0
-negoffset=0
-TmpDir=/scratch/Users/zama8258/processed_nascent/scratch/features
+# TODO - Convert this to argument-parsing based for publication
+# Variable setup
+offset=500
+negoffset=500
+# TmpDir=/scratch/Users/zama8258/processed_nascent/scratch/features
+TmpDir=$(mktemp -d)
 BedHome=/scratch/Users/zama8258
+BamDir=/scratch/Users/zama8258/processed_nascent_testing/mapped/bams
 OutGenePosFile="$TmpDir""/gene_pos.bed"
 OutGeneNegFile="$TmpDir""/gene_neg.bed"
 GeneFile="$TmpDir""/all_genes.bed"
 Infile=/scratch/Users/zama8258/processed_nascent/fpkm/C413_1_S3_R1_001.trim.sorted.isoform_max.bed
-out=counts_top500_fullgene.txt
+out=/scratch/Users/zama8258/processed_nascent/counts/counts_fullgene.txt
 
 logr "Adjusting Coordinates"
 
-about_5prime=1 # TODO Change this to a script parameter
+about_5prime=0 # TODO Change this to a script parameter
 # Currently there are 2 modes that this script supports. Depending on
 # how the about_5prime flag is set, coordinate adjustment will either
 # be performed using a fixed-window about the TSS. If the flag is not
@@ -62,12 +73,12 @@ if [ $about_5prime = 1 ]; then
 		logr "Performing Coordinate Adjustment about 5' End"
 		logr "NOTICE: \$negoffset will not be used in this mode."
 		awk -v OFS='\t' -v offset="$offset" -v negoffset="$negoffset" \
-				'{if ($6 == "+") print $1, $2+offset, $2-offset, $4, $5, $6}' "$Infile" \
+				'{if ($6 == "+") print $1, $2-offset, $2+offset, $4, $5, $6}' "$Infile" \
 				| sort -k1,1 -k2,2n | \
 				awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4, $5, $6}' \
 						> "$OutGenePosFile" &
 		awk -v OFS='\t' -v offset="$offset" -v negoffset="$negoffset" \
-				'{if ($6 == "-") print $1, $2+offset, $3-offset, $4, $5, $6}' "$Infile" \
+				'{if ($6 == "-") print $1, $3-offset, $3+offset, $4, $5, $6}' "$Infile" \
 				| sort -k1,1 -k2,2n | \
 				awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4, $5, $6}' \
 						> "$OutGeneNegFile" &
@@ -95,7 +106,7 @@ cat	"$OutGenePosFile" "$OutGeneNegFile"	| sort -k1,1 -k2,2 > "$GeneFile"
 ## Change directory because FeatureCounts is picky about running in
 ## the same directory as the bams.
 logr "Changing Directories"
-pushd /scratch/Users/zama8258/processed_nascent_testing/mapped/bams || exit
+pushd "$BamDir" || exit
 logr "Intersecting the Reference Sequence"
 
 ## Filter out the set of genes we have selected as maximal isoforms.
@@ -120,7 +131,7 @@ popd
 
 # Make a copy of the final counts without header for ingesting into R
 # scripts.
-tail -n +2 "$out" "$out"_without_header
+tail -n +2 "$out" > "$out"_without_header
 
 logr "Done"
 

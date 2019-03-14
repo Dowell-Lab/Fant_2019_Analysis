@@ -3,8 +3,8 @@
 #SBATCH --error=/scratch/Users/zama8258/processed_nascent/e_and_o/%x_%j.err
 #SBATCH -p short
 #SBATCH -N 1
-#SBATCH -c 4
-#SBATCH --mem=32gb
+#SBATCH -c 32
+#SBATCH --mem=64gb
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=zama8258@colorado.edu
 

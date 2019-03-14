@@ -25,7 +25,7 @@
 
 # Code:
 
-set -euxo pipefail
+set -euo pipefail
 
 # Data read-in and tmp files
 srcBed=/scratch/Users/zama8258/processed_nascent/fpkm/C413_1_S3_R1_001.trim.sorted.isoform_max
@@ -35,15 +35,21 @@ sorted="$scratch"/sorted.fpkm
 topGenes="$scratch"/topGenes.bed
 bottomGenes="$scratch"/bottomGenes.bed
 middleGenes="$scratch"/middleGenes.bed
+# topGenesAnti="$scratch"/topGenesAnti.bed
+# bottomGenesAnti="$scratch"/bottomGenesAnti.bed
+# middleGenesAnti="$scratch"/middleGenesAnti.bed
 lendiff="$scratch"/lendiff
 
 # Variable setup
 topAndBottomThreshold=500 # Take the top "n" genes off the top and bottom
 minLengthThreshold=2000 # Minimum gene length that we require
 
+# Load bedtools
+module load bedtools
+
 # Filter off genes shorter than the threshold
 awk -v OFS='\t' -v thresh="$minLengthThreshold" \
-		'{if (sqrt($3-$2)^2 > thresh) print $0}' "$srcBed" > "$filtered"
+		'{if (sqrt($3-$2)^2 > thresh) print $1, $2-1000, $3, $4, $5, $6, $7, $8}' "$srcBed" > "$filtered"
 wc -l "$srcBed" > "$lendiff"
 wc -l "$filtered" >> "$lendiff"
 
@@ -51,12 +57,22 @@ wc -l "$filtered" >> "$lendiff"
 # First, sort in reverse order
 sort -grk7,7 "$filtered" > "$sorted"
 
+echo "Separating All" &
 head -n"$topAndBottomThreshold" "$sorted" | \
-		sort -k1,1 -k2,2 | cut -f1-6 > "$topGenes"
+		sort -k1,1 -k2,2 | cut -f1-6 | bedtools sort > "$topGenes" &
 tail -n"$topAndBottomThreshold" "$sorted" | \
-		sort -k1,1 -k2,2 | cut -f1-6 > "$bottomGenes"
+		sort -k1,1 -k2,2 | cut -f1-6 | bedtools sort > "$bottomGenes" &
 head -n-"$topAndBottomThreshold" "$sorted" | \
-		tail -n+"$topAndBottomThreshold" | cut -f1-6 > "$middleGenes"
+		tail -n+"$topAndBottomThreshold" | cut -f1-6 | \
+		bedtools sort > "$middleGenes" &
+wait
 
+# echo "Generating Antisense" &
+# sed 's/+/|/' "$topGenes" | sed 's/-/+/' | sed 's/|/-/' > "$topGenesAnti" &
+# sed 's/+/|/' "$middleGenes" | sed 's/-/+/' | sed 's/|/-/' > "$middleGenesAnti" &
+# sed 's/+/|/' "$bottomGenes" | sed 's/-/+/' | sed 's/|/-/' > "$bottomGenesAnti" &
+# wait
+
+echo "Done"
 #
 # separate_for_metagene.bash ends here

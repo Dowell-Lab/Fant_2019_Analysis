@@ -1,4 +1,4 @@
-#!env bash
+#!/bin/bash
 
 echo "Submitting Multiple CalcIsoform Jobs"
 c1=/scratch/Users/zama8258/processed_nascent/samtools/C413_1_S3_R1_001.trim.sorted.bam
