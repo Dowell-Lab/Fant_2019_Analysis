@@ -20,8 +20,8 @@
 #SBATCH --error=/scratch/Users/zama8258/processed_nascent/e_and_o/%x_%j.err
 #SBATCH -p short
 #SBATCH -N 1
-#SBATCH -c 32
-#SBATCH --mem=32gb
+#SBATCH -c 8
+#SBATCH --mem=8gb
 #SBATCH --mail-user=zama8258@colorado.edu
 
 # Handle Errors Properly:
@@ -40,68 +40,69 @@ if ! type -t bedtools; then
 		module load bedtools
 fi
 
+# Set the number of available cores
+NUM_CORES=8
+
 # TODO - Convert this to argument-parsing based for publication
 # Variable setup
 offset=500
 negoffset=500
 # TmpDir=/scratch/Users/zama8258/processed_nascent/scratch/features
 TmpDir=$(mktemp -d)
-BedHome=/scratch/Users/zama8258
 BamDir=/scratch/Users/zama8258/processed_nascent_testing/mapped/bams
 OutGenePosFile="$TmpDir""/gene_pos.bed"
 OutGeneNegFile="$TmpDir""/gene_neg.bed"
-GeneFile="$TmpDir""/all_genes.bed"
-Infile=/scratch/Users/zama8258/processed_nascent/fpkm/C413_1_S3_R1_001.trim.sorted.isoform_max.bed
-out=/scratch/Users/zama8258/processed_nascent/counts/counts_fullgene.txt
+GeneFileInr="$TmpDir""/all_genes_inr.bed"
+GeneFileBody="$TmpDir""/all_genes_genebody.bed"
+BaseDir=/scratch/Users/zama8258/processed_nascent
+Infile="$BaseDir"/fpkm/C413_1_S3_R1_001.trim.sorted.isoform_max.bed
+outFull="$BaseDir"/counts/counts_full.txt
+outInr="$BaseDir"/counts/counts_initiatior.txt
+outGenebody="$BaseDir"/counts/counts_genebody.txt
+safFull="$BaseDir"/counts/full.saf
+safInr="$BaseDir"/counts/initiation.saf
+safGenebody="$BaseDir"/counts/genebody.saf
 
 logr "Adjusting Coordinates"
 
-about_5prime=0 # TODO Change this to a script parameter
-# Currently there are 2 modes that this script supports. Depending on
-# how the about_5prime flag is set, coordinate adjustment will either
-# be performed using a fixed-window about the TSS. If the flag is not
-# set, coordinate adjustment will be performed using both values about
-# the 5' and 3' ends.
-
-# USAGE:
-# about_5prime = 1
-# Coordinates are TSS - offset to TSS + offset
-# about_5prime = 0
-# Coordinates are TSS + offset to TES - offset
-
-if [ $about_5prime = 1 ]; then
-		logr "Performing Coordinate Adjustment about 5' End"
-		logr "NOTICE: \$negoffset will not be used in this mode."
-		awk -v OFS='\t' -v offset="$offset" -v negoffset="$negoffset" \
-				'{if ($6 == "+") print $1, $2-offset, $2+offset, $4, $5, $6}' "$Infile" \
-				| sort -k1,1 -k2,2n | \
-				awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4, $5, $6}' \
-						> "$OutGenePosFile" &
-		awk -v OFS='\t' -v offset="$offset" -v negoffset="$negoffset" \
-				'{if ($6 == "-") print $1, $3-offset, $3+offset, $4, $5, $6}' "$Infile" \
-				| sort -k1,1 -k2,2n | \
-				awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4, $5, $6}' \
-						> "$OutGeneNegFile" &
-		wait
-else
-		logr "Performing Coordinate Adjustment about Full Gene"
-		# Do coordinate adjustment using AWK, so we only count the	"gene body"
-		awk -v OFS='\t' -v offset="$offset" -v negoffset="$negoffset" \
-				'{if ($6 == "+") print $1, $2+offset, $3-negoffset, $4, $5, $6}' "$Infile" \
-				| sort -k1,1 -k2,2n | \
-				awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4, $5, $6}' \
-						> "$OutGenePosFile" &
-		awk -v OFS='\t' -v offset="$offset" -v negoffset="$negoffset" \
-				'{if ($6 == "-") print $1, $2+negoffset, $3-offset, $4, $5, $6}' "$Infile" \
-				| sort -k1,1 -k2,2n | \
-				awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4, $5, $6}' \
-						> "$OutGeneNegFile" &
-		wait
-fi
-
+logr "Performing Coordinate Adjustment about 5' End"
+logr "NOTICE: \$negoffset will not be used in this mode."
+awk -v OFS='\t' -v offset="$offset" -v negoffset="$negoffset" \
+		'{if ($6 == "+") print $1, $2-offset, $2+offset, $4, $5, $6}' "$Infile" \
+		| sort -k1,1 -k2,2n | \
+		awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4, $5, $6}' \
+				> "$OutGenePosFile" &
+awk -v OFS='\t' -v offset="$offset" -v negoffset="$negoffset" \
+		'{if ($6 == "-") print $1, $3-offset, $3+offset, $4, $5, $6}' "$Infile" \
+		| sort -k1,1 -k2,2n | \
+		awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4, $5, $6}' \
+				> "$OutGeneNegFile" &
+wait
 ## Merge Positive and Negative Strand Files and sort them.
 logr "Merging Adjusted Coordinates"
-cat	"$OutGenePosFile" "$OutGeneNegFile"	| sort -k1,1 -k2,2 > "$GeneFile"
+cat	"$OutGenePosFile" "$OutGeneNegFile"	| sort -k1,1 -k2,2 > "$GeneFileInr"
+
+logr "Performing Coordinate Adjustment about Full Gene"
+# Do coordinate adjustment using AWK, so we only count the	"gene body"
+awk -v OFS='\t' -v offset="$offset" -v negoffset="$negoffset" \
+		'{if ($6 == "+") print $1, $2+offset, $3-negoffset, $4, $5, $6}' "$Infile" \
+		| sort -k1,1 -k2,2n | \
+		awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4, $5, $6}' \
+				> "$OutGenePosFile" &
+awk -v OFS='\t' -v offset="$offset" -v negoffset="$negoffset" \
+		'{if ($6 == "-") print $1, $2+negoffset, $3-offset, $4, $5, $6}' "$Infile" \
+		| sort -k1,1 -k2,2n | \
+		awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4, $5, $6}' \
+				> "$OutGeneNegFile" &
+wait
+## Merge Positive and Negative Strand Files and sort them.
+logr "Merging Adjusted Coordinates"
+cat	"$OutGenePosFile" "$OutGeneNegFile"	| sort -k1,1 -k2,2 > "$GeneFileBody"
+
+## Generate the SAF Files
+awk -v OFS='\t' '{print $4, $1, $2, $3, $6}' "$GeneFileInr" > "$safInr"
+awk -v OFS='\t' '{print $4, $1, $2, $3, $6}' "$GeneFileBody" > "$safGenebody"
+awk -v OFS='\t' '{print $4, $1, $2, $3, $6}' "$Infile" > "$safFull"
 
 ## Change directory because FeatureCounts is picky about running in
 ## the same directory as the bams.
@@ -109,29 +110,53 @@ logr "Changing Directories"
 pushd "$BamDir" || exit
 logr "Intersecting the Reference Sequence"
 
-## Filter out the set of genes we have selected as maximal isoforms.
-## We can only use a single set of genes for this, so we must assume
-## that all	samples have the same expressed set.
-bedtools intersect -a "$BedHome"/hg38_reference.gtf \
-				 -b	"$GeneFile" \
-				 > "$BedHome"/hg38_reference_adjusted.gtf
-
 # Finally, run featurecounts to actually do the counting.
-logr "Performing Featurecounts"
+# Does this featurecounts need to count only 51% overlapping reads?
+
+# Initation
+logr "Performing Featurecounts (Inr)"
 /scratch/Users/zama8258/subread-1.6.2-Linux-x86_64/bin/featureCounts \
-		-T 32 \
+		-T "$NUM_CORES" \
 		-s 1 \
-		-a "$BedHome"/hg38_reference_adjusted.gtf \
-		-o "$out" \
+		-F 'SAF' \
+		-a "$safInr" \
+		-o "$outInr" \
 		C413_1_S3_R1_001.sorted.bam \
 		C413_2_S4_R1_001.sorted.bam \
 		PO_1_S1_R1_001.sorted.bam \
 		PO_2_S2_R1_001.sorted.bam
-popd
 
-# Make a copy of the final counts without header for ingesting into R
-# scripts.
-tail -n +2 "$out" > "$out"_without_header
+tail -n +2 "$outInr" > "$outInr"_without_header
+
+logr "Performing Featurecounts (Gene Body)"
+/scratch/Users/zama8258/subread-1.6.2-Linux-x86_64/bin/featureCounts \
+		-T "$NUM_CORES" \
+		-s 1 \
+		-F 'SAF' \
+		-a "$safGenebody" \
+		-o "$outGenebody" \
+		C413_1_S3_R1_001.sorted.bam \
+		C413_2_S4_R1_001.sorted.bam \
+		PO_1_S1_R1_001.sorted.bam \
+		PO_2_S2_R1_001.sorted.bam
+
+tail -n +2 "$outGenebody" > "$outGenebody"_without_header
+
+logr "Performing Featurecounts (Full Gene)"
+/scratch/Users/zama8258/subread-1.6.2-Linux-x86_64/bin/featureCounts \
+		-T "$NUM_CORES" \
+		-s 1 \
+		-F 'SAF' \
+		-a "$safFull" \
+		-o "$outFull" \
+		C413_1_S3_R1_001.sorted.bam \
+		C413_2_S4_R1_001.sorted.bam \
+		PO_1_S1_R1_001.sorted.bam \
+		PO_2_S2_R1_001.sorted.bam
+
+tail -n +2 "$outFull" > "$outFull"_without_header
+
+popd
 
 logr "Done"
 
