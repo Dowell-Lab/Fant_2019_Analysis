@@ -43,30 +43,57 @@ countsAntiSense <- read_delim(antisense, delim="\t")
 
 df_sense <- countsSense %>% separate(Geneid, into = c("geneid", "coord"), sep="/")
 df_sense$coord = as.numeric(df_sense$coord)
+
+df_antisense <- countsAntiSense %>% separate(Geneid, into = c("geneid", "coord"), sep = "/")
+df_antisense$coord = as.numeric(df_antisense$coord)
+
+## Normalize the counts for each region by TPM
+tpm_normalize <- function(sense, antisense, sample) {
+    ## First, calculate RPK for the strand only
+    RPK_sample <- (sense[[sample]] / (sense$Length / (10 ^ 3)))
+    ## Then, calculate RPK for both strands (for scaling factor)
+    RPK <- ((sense[[sample]] + antisense[[sample]]) /
+            (sense$Length / (10 ^ 3)))
+    ## Then, calculate the scaling factor
+    scale <- sum(RPK) / 1000000
+    ## Divide RPK values by scaling factor
+    out <- RPK_sample / scale
+    return(out)
+}
+
+## TPM Normalize Sense Strand
+df_sense$C413_1_S3_R1_001.sorted.bam <-
+    tpm_normalize(df_sense, df_antisense, "C413_1_S3_R1_001.sorted.bam")
+df_sense$C413_2_S4_R1_001.sorted.bam <-
+    tpm_normalize(df_sense, df_antisense, "C413_2_S4_R1_001.sorted.bam")
+df_sense$PO_1_S1_R1_001.sorted.bam <-
+    tpm_normalize(df_sense, df_antisense, "PO_1_S1_R1_001.sorted.bam")
+df_sense$PO_2_S2_R1_001.sorted.bam <-
+    tpm_normalize(df_sense, df_antisense, "PO_2_S2_R1_001.sorted.bam")
+
+## Repeat for Antisense
+df_antisense$C413_1_S3_R1_001.sorted.bam <-
+    tpm_normalize(df_antisense, df_sense, "C413_1_S3_R1_001.sorted.bam")
+df_antisense$C413_2_S4_R1_001.sorted.bam <-
+    tpm_normalize(df_antisense, df_sense, "C413_2_S4_R1_001.sorted.bam")
+df_antisense$PO_1_S1_R1_001.sorted.bam <-
+    tpm_normalize(df_antisense, df_sense, "PO_1_S1_R1_001.sorted.bam")
+df_antisense$PO_2_S2_R1_001.sorted.bam <-
+    tpm_normalize(df_antisense, df_sense, "PO_2_S2_R1_001.sorted.bam")
+
+## Transform data by calculating the max, min, and mean for each row
 df_sense <- df_sense %>%
     mutate(treat_mu = rowMeans(select(.,
                                       C413_1_S3_R1_001.sorted.bam,
                                       C413_2_S4_R1_001.sorted.bam)))
 df_sense <- df_sense %>%
-    mutate(treat_max = pmax(C413_1_S3_R1_001.sorted.bam,
-                            C413_2_S4_R1_001.sorted.bam))
-df_sense <- df_sense %>%
-    mutate(treat_min = pmin(C413_1_S3_R1_001.sorted.bam,
-                            C413_2_S4_R1_001.sorted.bam))
-df_sense <- df_sense %>%
     mutate(control_mu = rowMeans(select(.,
                                         PO_1_S1_R1_001.sorted.bam,
                                         PO_2_S2_R1_001.sorted.bam)))
-df_sense <- df_sense %>%
-    mutate(control_max = pmax(PO_1_S1_R1_001.sorted.bam,
-                              PO_2_S2_R1_001.sorted.bam))
-df_sense <- df_sense %>%
-    mutate(control_min = pmin(PO_1_S1_R1_001.sorted.bam,
-                              PO_2_S2_R1_001.sorted.bam))
 df_sense <- df_sense %>% subset(select = -c(geneid, Chr, Start, End, Length,
                                             C413_1_S3_R1_001.sorted.bam,
                                             C413_2_S4_R1_001.sorted.bam,
-                                PO_1_S1_R1_001.sorted.bam,
+                                            PO_1_S1_R1_001.sorted.bam,
                                 PO_2_S2_R1_001.sorted.bam))
 df_sense <- df_sense %>% mutate(coord = ifelse(Strand == '-', (num_bins - 1) - coord, coord))
 
@@ -80,28 +107,15 @@ final_sense <- df_sense %>% group_by(coord) %>%
            mean_control_max = mean_control_mu + mean_control_var,
            mean_control_min = mean_control_mu - mean_control_var)
 
-df_antisense <- countsAntiSense %>% separate(Geneid, into = c("geneid", "coord"), sep = "/")
-df_antisense$coord = as.numeric(df_antisense$coord)
+
 df_antisense <- df_antisense %>%
     mutate(treat_mu = rowMeans(select(.,
                                       C413_1_S3_R1_001.sorted.bam,
                                       C413_2_S4_R1_001.sorted.bam)))
 df_antisense <- df_antisense %>%
-    mutate(treat_max = pmax(C413_1_S3_R1_001.sorted.bam,
-                            C413_2_S4_R1_001.sorted.bam))
-df_antisense <- df_antisense %>%
-    mutate(treat_min = pmin(C413_1_S3_R1_001.sorted.bam,
-                            C413_2_S4_R1_001.sorted.bam))
-df_antisense <- df_antisense %>%
     mutate(control_mu = rowMeans(select(.,
                                         PO_1_S1_R1_001.sorted.bam,
                                         PO_2_S2_R1_001.sorted.bam)))
-df_antisense <- df_antisense %>%
-    mutate(control_max = pmax(PO_1_S1_R1_001.sorted.bam,
-                              PO_2_S2_R1_001.sorted.bam))
-df_antisense <- df_antisense %>%
-    mutate(control_min = pmin(PO_1_S1_R1_001.sorted.bam,
-                              PO_2_S2_R1_001.sorted.bam))
 df_antisense <- df_antisense %>% subset(select = -c(geneid, Chr, Start, End, Length,
                                                     C413_1_S3_R1_001.sorted.bam,
                                             C413_2_S4_R1_001.sorted.bam,
@@ -121,7 +135,10 @@ final_antisense <- df_antisense %>% group_by(coord) %>%
 
 ## Full Plot
 library("ggthemes")
+knockdownNorm <- factor(c('Knockdown', 'Control'))
 ggplot() + theme_tufte() +
+    scale_color_manual(values=c('Control'='#00BFC4', 'Knockdown'='#F8766D')) +
+    scale_fill_manual(values=c('Control'='#00BFC4', 'Knockdown'='#F8766D')) +
     ## Sense Knockdown
     geom_line(data = final_sense, aes(x = coord,
                                       y = mean_treat_mu,
@@ -203,7 +220,7 @@ ggplot() + theme_tufte() +
     labs(title = "Metagene Plot", color = "Condition", fill = "Std. Dev. Mean") +
     xlab("Bins") + ylab("Normalized Read Depth")
 
-ggsave(paste0("inset_", outfile), width = 10, height = 5)
+ggsave(paste0(outfile, "_inset.png"), width = 10, height = 5)
 
 ######################################################################
 ### metagene_graph_custom.r ends here
