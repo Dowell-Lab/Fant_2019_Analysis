@@ -32,12 +32,16 @@ srcBed=/scratch/Users/zama8258/processed_nascent/fpkm/C413_1_S3_R1_001.trim.sort
 scratch=/scratch/Users/zama8258/processed_nascent/metagene/
 filtered="$scratch"/lenfilter.fpkm
 sorted="$scratch"/sorted.fpkm
+
 topGenes="$scratch"/topGenes.bed
 bottomGenes="$scratch"/bottomGenes.bed
 middleGenes="$scratch"/middleGenes.bed
-# topGenesAnti="$scratch"/topGenesAnti.bed
-# bottomGenesAnti="$scratch"/bottomGenesAnti.bed
-# middleGenesAnti="$scratch"/middleGenesAnti.bed
+
+shortGenes="$scratch"/shortGenes.bed
+mediumGenes="$scratch"/mediumGenes.bed
+mediumLongGenes="$scratch"/mediumLongGenes.bed
+longGenes="$scratch"/longGenes.bed
+
 lendiff="$scratch"/lendiff
 
 # Variable setup
@@ -49,7 +53,7 @@ module load bedtools
 
 # Filter off genes shorter than the threshold
 awk -v OFS='\t' -v thresh="$minLengthThreshold" \
-		'{if (sqrt($3-$2)^2 > thresh) print $1, $2-1000, $3, $4, $5, $6, $7, $8}' "$srcBed" > "$filtered"
+		'{if (sqrt($3-$2)^2 > thresh) print $1, $2, $3, $4, $5, $6, $7, $8}' "$srcBed" > "$filtered"
 wc -l "$srcBed" > "$lendiff"
 wc -l "$filtered" >> "$lendiff"
 
@@ -67,11 +71,15 @@ head -n-"$topAndBottomThreshold" "$sorted" | \
 		bedtools sort > "$middleGenes" &
 wait
 
-# echo "Generating Antisense" &
-# sed 's/+/|/' "$topGenes" | sed 's/-/+/' | sed 's/|/-/' > "$topGenesAnti" &
-# sed 's/+/|/' "$middleGenes" | sed 's/-/+/' | sed 's/|/-/' > "$middleGenesAnti" &
-# sed 's/+/|/' "$bottomGenes" | sed 's/-/+/' | sed 's/|/-/' > "$bottomGenesAnti" &
-# wait
+# Then, generate tables for different length genes
+awk -v OFS='\t' '{if ($3 - $2 < 10000) print $0}' "$filtered" | \
+		sort -k1,1 -k2,2 | cut -f1-6 | bedtools sort > "$shortGenes"
+awk -v OFS='\t' '{if ($3 - $2 > 10000 &&  $3 - $2 < 25000) print $0}' "$filtered" | \
+		sort -k1,1 -k2,2 | cut -f1-6 | bedtools sort > "$mediumGenes"
+awk -v OFS='\t' '{if ($3 - $2 > 25000 &&  $3 - $2 < 65000) print $0}' "$filtered" | \
+		sort -k1,1 -k2,2 | cut -f1-6 | bedtools sort > "$mediumLongGenes"
+awk -v OFS='\t' '{if ($3 - $2 > 65000) print $0}' "$filtered" | \
+		sort -k1,1 -k2,2 | cut -f1-6 | bedtools sort > "$longGenes"
 
 echo "Done"
 #

@@ -3,13 +3,14 @@
 #SBATCH --error=/scratch/Users/zama8258/processed_nascent/e_and_o/%x_%j.err
 #SBATCH -p short
 #SBATCH -N 1
-#SBATCH -c 32
-#SBATCH --mem=32gb
+#SBATCH -c 8
+#SBATCH --mem=8gb
 #SBATCH --mail-user=zama8258@colorado.edu
 
 #	Assume only	utf-8
 export LC_ALL=C
 
+## Try -10kb
 usage()
 {
 		echo "metagene_custom.bash - generate metagene plots for provided files"
@@ -53,15 +54,11 @@ logr "Parsed Params: ""$regionFile"", ""$imgOut"
 
 logr "Starting Analysis"
 srcDir=/scratch/Users/zama8258/pause_analysis_src
-# regionFile=/scratch/Users/zama8258/processed_nascent/metagene/topGenes.bed
-# imgOut=/scratch/Users/zama8258/pause_output/metagene_top500.png
-numRegions=100
-tmpdir=$(mktemp -d)
-# safFile=/scratch/Users/zama8258/processed_nascent/fpkm/region_split.saf
-# countsSenseOut=metagene_counts_sense.txt
-# countsSenseFix=metagene_counts_sense_fix.txt
-# countsAntiSenseOut=metagene_counts_antisense.txt
-# countsAntiSenseFix=metagene_counts_antisense_fix.txt
+numRegions=1000
+# tmpdir=$(mktemp -d)
+tmpdir=/scratch/Users/zama8258/processed_nascent/metagene/
+
+NUM_CORES=8
 safFile="$tmpdir"/region_split.saf
 countsSenseOut="$tmpdir"/metagene_counts_sense.txt
 countsSenseFix="$tmpdir"/metagene_counts_sense_fix.txt
@@ -79,7 +76,7 @@ logr "Changing Directories"
 cd /scratch/Users/zama8258/processed_nascent_testing/mapped/bams || exit
 logr "Building Sense Counts Table from SAF"
 /scratch/Users/zama8258/subread-1.6.2-Linux-x86_64/bin/featureCounts \
-		-T 32 \
+		-T "$NUM_CORES" \
 		-s 1 \
 		--fracOverlap 0.51 \
 		-F 'SAF' \
@@ -92,7 +89,7 @@ logr "Building Sense Counts Table from SAF"
 
 logr "Building Antisense Counts Table from SAF"
 /scratch/Users/zama8258/subread-1.6.2-Linux-x86_64/bin/featureCounts \
-		-T 32 \
+		-T "$NUM_CORES" \
 		-s 2 \
 		--fracOverlap 0.51 \
 		-F 'SAF' \

@@ -17,30 +17,30 @@ echo $cr2
 echo $pr1
 echo $pr2
 
-bash /scratch/Users/zama8258/pause_analysis_src/charli_pi_to_polya.sh \
+bash /scratch/Users/zama8258/pause_analysis_src/calculate_pause_index_to_polya.sh \
 		 --ref=/scratch/Users/zama8258/processed_nascent/fpkm/C413_1_S3_R1_001.trim.sorted.isoform_max.bed \
 		 --pus=-30 \
 		 --pds=300 \
 		 --gds=PROD \
-		 --srr=C413_1_S3_R1_001.trim.bedGraph &
-bash /scratch/Users/zama8258/pause_analysis_src/charli_pi_to_polya.sh \
+		 --tag=C413_1_S3_R1_001.trim.bedGraph &
+bash /scratch/Users/zama8258/pause_analysis_src/calculate_pause_index_to_polya.sh \
 		 --ref=/scratch/Users/zama8258/processed_nascent/fpkm/C413_2_S4_R1_001.trim.sorted.isoform_max.bed \
 		 --pus=-30 \
 		 --pds=300 \
 		 --gds=PROD \
-		 --srr=C413_2_S4_R1_001.trim.bedGraph &
-bash /scratch/Users/zama8258/pause_analysis_src/charli_pi_to_polya.sh \
+		 --tag=C413_2_S4_R1_001.trim.bedGraph &
+bash /scratch/Users/zama8258/pause_analysis_src/calculate_pause_index_to_polya.sh \
 		 --ref=/scratch/Users/zama8258/processed_nascent/fpkm/PO_1_S1_R1_001.trim.sorted.isoform_max.bed \
 		 --pus=-30 \
 		 --pds=300 \
 		 --gds=PROD \
-		 --srr=PO_1_S1_R1_001.trim.bedGraph &
-bash /scratch/Users/zama8258/pause_analysis_src/charli_pi_to_polya.sh \
+		 --tag=PO_1_S1_R1_001.trim.bedGraph &
+bash /scratch/Users/zama8258/pause_analysis_src/calculate_pause_index_to_polya.sh \
 		 --ref=/scratch/Users/zama8258/processed_nascent/fpkm/PO_2_S2_R1_001.trim.sorted.isoform_max.bed \
 		 --pus=-30 \
 		 --pds=300 \
 		 --gds=PROD \
-		 --srr=PO_2_S2_R1_001.trim.bedGraph &
+		 --tag=PO_2_S2_R1_001.trim.bedGraph &
 wait
 
 # ScriptDir=/scratch/Users/zama8258/pause_analysis_src

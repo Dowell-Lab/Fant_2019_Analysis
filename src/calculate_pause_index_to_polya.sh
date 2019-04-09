@@ -7,7 +7,7 @@
 # - Add better error handling
 #	-	Make it all faster by	pipelining stuff better...
 # - Strip out	redundant	TSS's
-# -	Update all logging messages to include the SRR
+# -	Update all logging messages to include the TAG
 #	-	Update usage message...
 
 # Strict error checking
@@ -25,16 +25,16 @@ export LC_ALL=C
 
 usage()
 {
-		echo "calc_pausing_indices_fixwin.sh - a script for calculating fixed-width pausing indices"
+		echo "calc_pausing_indices_polya.sh - a script for calculating fixed-width pausing indices"
 		echo "Example:"
-		echo "    ./calc_pausing_indices_fixwin.sh --pus=-100 --pds=300 --gds=2000 --srr=SRR2084556"
+		echo "    ./calc_pausing_indices_fixwin.sh --pus=-100 --pds=300 --gds=2000 --tag=example.bedgraph"
 		echo "Usage:"
 		echo "    -h/--help -- Display this help message."
 		echo "    --ref     -- Reference file to use"
 		echo "    --pus     -- Pausing bases upstream"
 		echo "    --pds     -- Pausing bases downstream"
-		echo "    --gds     -- Gene bases downstream"
-		echo "    --srr     -- SRR file to parse"
+		echo "    --gds     -- Gene bases downstream from polyA"
+		echo "    --tag     -- The filename tag to use"
 		exit 0
 }
 
@@ -58,8 +58,8 @@ while [ "$1" != "" ]; do
 				--gds)
 						gds=$VALUE
 						;;
-				--srr)
-						srr=$VALUE
+				--tag)
+						tag=$VALUE
 						;;
 				*)
 						echo "ERROR: unknown parameter \"$PARAM\""
@@ -74,7 +74,7 @@ done
 # for multiple modes of operation in a single script.
 gus=$(echo "$pds+1" | bc)
 
-echo "[PARAM] Up: $pus, Down: $pds, Gene Up: $gus, Gene Down: $gds, SRR: $srr"
+echo "[PARAM] Up: $pus, Down: $pds, Gene Up: $gus, Gene Down: $gds, TAG: $tag"
 
 # Make sure we have the necessary modules on the cluster
 if ! type -t bedtools 
@@ -85,12 +85,12 @@ fi
 ################################################################################
 
 # Variables we always need
-DirPrefix=/scratch/Users/zama8258
-InterestFile=/scratch/Users/zama8258/processed_nascent/bedtools/"$srr"
-#InterestFile=/scratch/Shares/public/nascentdb/processedv2.0/bedgraphs/$srr.tri.BedGraph
+DirPrefix=/scratch/Users/zama8258 # Where to send output
+BedDir=/scratch/Users/zama8258/processed_nascent/bedtools
+InterestFile="$BedDir"/"$tag" # The location of the bedfiles
 Infile=$ref
 # Infile=$DirPrefix/NCBI_RefSeq_UCSC_RefSeq_hg38.bed
-OutFile=$DirPrefix/pause_output/"$srr"_pause_ratios_$gds.data
+OutFile=$DirPrefix/pause_output/"$tag"_pause_ratios_"$gds".data
 
 #	During debugging, we write out all output to disk so that we can
 #	examine it and see what's going on with our script changes. This is
@@ -99,28 +99,28 @@ testing=true
 
 if $testing; then
 		# Variables	-	DEBUG
-		echo "[LOG] Running ""$srr"" in Debug Mode"
+		echo "[LOG] Running ""$tag"" in Debug Mode"
 		TmpDir=charli_pi
 
-		OutGenePosFile=$DirPrefix/$TmpDir/"$srr"_"$gds"_pos_tss.bed
-		OutBodyPosFile=$DirPrefix/$TmpDir/"$srr"_"$gds"_pos_body.bed
-		OutGeneNegFile=$DirPrefix/$TmpDir/"$srr"_"$gds"_neg_tss.bed
-		OutBodyNegFile=$DirPrefix/$TmpDir/"$srr"_"$gds"_neg_body.bed
+		OutGenePosFile=$DirPrefix/$TmpDir/"$tag"_"$gds"_pos_tss.bed
+		OutBodyPosFile=$DirPrefix/$TmpDir/"$tag"_"$gds"_pos_body.bed
+		OutGeneNegFile=$DirPrefix/$TmpDir/"$tag"_"$gds"_neg_tss.bed
+		OutBodyNegFile=$DirPrefix/$TmpDir/"$tag"_"$gds"_neg_body.bed
 
-		InterestFilePos=$DirPrefix/$TmpDir/"$srr"_"$gds"_interest_pos.bed
-		InterestFileNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_interest_neg.bed
+		InterestFilePos=$DirPrefix/$TmpDir/"$tag"_"$gds"_interest_pos.bed
+		InterestFileNeg=$DirPrefix/$TmpDir/"$tag"_"$gds"_interest_neg.bed
 
-		GeneOutPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_gene_pos.bed
-		GeneOutNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_gene_neg.bed
-		BodyOutPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_body_pos.bed
-		BodyOutNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_body_neg.bed
+		GeneOutPos=$DirPrefix/$TmpDir/"$tag"_"$gds"_out_gene_pos.bed
+		GeneOutNeg=$DirPrefix/$TmpDir/"$tag"_"$gds"_out_gene_neg.bed
+		BodyOutPos=$DirPrefix/$TmpDir/"$tag"_"$gds"_out_body_pos.bed
+		BodyOutNeg=$DirPrefix/$TmpDir/"$tag"_"$gds"_out_body_neg.bed
 
-		FinalPos=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_final_pos.bed
-		FinalNeg=$DirPrefix/$TmpDir/"$srr"_"$gds"_out_final_neg.bed
+		FinalPos=$DirPrefix/$TmpDir/"$tag"_"$gds"_out_final_pos.bed
+		FinalNeg=$DirPrefix/$TmpDir/"$tag"_"$gds"_out_final_neg.bed
 
 else
 
-		echo "[LOG] Running ""$srr"" in Production Mode."
+		echo "[LOG] Running ""$tag"" in Production Mode."
 		TmpDir=$(mktemp -d)
 
 		OutGenePosFile="$TmpDir""/""$(uuidgen)"
@@ -163,7 +163,7 @@ fi
 # be to break apart the awk commands for each respective mode and use
 # variable expansion inside other variable expansion to replace the
 # commands on the fly. A sort of bizarre metaprogramming, if you will.
-echo "[LOG] Prefiltering ""$srr"
+echo "[LOG] Prefiltering ""$tag"
 awk -v OFS='\t' -v pus="$pus" -v pds="$pds" \
 		'{if ($6 == "+") print $1, $2-pus, $2+pds, $4, $5, $6}' "$Infile"\
 		| sort -k1,1 -k2,2n | \
@@ -184,7 +184,7 @@ awk -v OFS='\t' -v gus="$gus" -v gds="$gds" \
 		| sort -k1,1 -k2,2n | \
 		awk -v OFS='\t' '{if ($2 < $3) print $1, $2, $3, $4}' \
 				> "$OutGeneNegFile" &
-echo "[LOG] Splitting data file ""$srr" &
+echo "[LOG] Splitting data file ""$tag" &
 awk -v OFS='\t' '{if ($4 > 0) print $1, $2, $3, $4}' "$InterestFile" \
 		> "$InterestFilePos" &
 awk -v OFS='\t' '{if ($4 < 0) print $1, $2, $3, $4}' "$InterestFile" \
@@ -198,7 +198,7 @@ wait
 # consider the strandedness of the data in the preliminary step of
 # separating strands and calculating a modified reference sequence.
 
-echo "[LOG] Calculating Region Sums ""$srr"
+echo "[LOG] Calculating Region Sums ""$tag"
 bedtools map -a "$OutGenePosFile" -b "$InterestFilePos" -c 4 -o sum \
 		| awk -F '\t' '($5 != "." && $5 != 0) ' > "$GeneOutPos" &
 bedtools map -a "$OutBodyPosFile" -b "$InterestFilePos" -c 4 -o sum \
@@ -223,7 +223,7 @@ wait
 # final file for our last step.
 
 # Finish Coverage Statistics by dividing by length.
-echo "[LOG] Calculating Coverage Statistics ""$srr"
+echo "[LOG] Calculating Coverage Statistics ""$tag"
 paste "$BodyOutPos" \
 			<(awk -F '\t' 'NR==FNR{a[NR]=$5;next}{print $5+a[FNR]}' \
 						"$GeneOutPos" "$BodyOutPos") \
@@ -244,9 +244,9 @@ wait
 # normalized coverage statistics.
 
 # FIXME figure out a way to	account for	refseq strandedness earlier on...
-echo "[LOG] Calculating Pausing Index ""$srr"
+echo "[LOG] Calculating Pausing Index ""$tag"
 awk -F '\t' 'FNR==NR{a[$4]=$5; next} ($4 in a) {print $4,"+",$5/a[$4], $6}' \
 		"$GeneOutPos" "$FinalPos" | sort -t$'\t' -k1,1 > "$OutFile"
 awk -F '\t' 'FNR==NR{a[$4]=$5; next} ($4 in a) {print $4,"-",$5/a[$4], $6}' \
 		"$GeneOutNeg" "$FinalNeg" | sort -t$'\t' -k1,1 >> "$OutFile"
-echo "[LOG] Done $srr $gds"
+echo "[LOG] Done $tag $gds"

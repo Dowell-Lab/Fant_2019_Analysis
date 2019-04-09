@@ -22,7 +22,7 @@ makefig <- function(deseqdata, fileprefix) {
     ## Write results
     write.csv(resdata, file = paste0(fileprefix, "-diffexpr-results.csv"))
 
-    ptsize <- 60
+    ptsize <- 40 * 1.0
 
     ## png(paste0(fileprefix, "-diffexpr-hist.png"), 1500, 1000, pointsize = ptsize)
     ## hist(res$pvalue, breaks = 50, col = "grey")
@@ -83,7 +83,7 @@ sizes <- c(sizeFactors(cds))
 ###########################################################
 
 ## We have to fix the counts table by removing the first row, hence "counts_fix.txt"
-full_seqdata <- read.delim("counts_fullgene.txt_without_header", stringsAsFactors = FALSE, header = TRUE,
+full_seqdata <- read.delim("counts_full.txt_without_header", stringsAsFactors = FALSE, header = TRUE,
                            row.names = 1)
 ## Then, we filter to only include the resolved isoforms
 full_df <- as.tibble(rownames_to_column(full_seqdata))

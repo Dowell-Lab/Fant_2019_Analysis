@@ -184,6 +184,8 @@ inset_antisense <- final_antisense %>% filter(coord > 40) %>% filter(coord < 80)
 
 ## Inset Plot
 ggplot() + theme_tufte() +
+    scale_color_manual(values=c('Control'='#00BFC4', 'Knockdown'='#F8766D')) +
+    scale_fill_manual(values=c('Control'='#00BFC4', 'Knockdown'='#F8766D')) +
     ## Sense Knockdown
     geom_line(data = inset_sense, aes(x = coord,
                                       y = mean_treat_mu,

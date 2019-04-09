@@ -56,9 +56,11 @@ GeneFileInr="$TmpDir""/all_genes_inr.bed"
 GeneFileBody="$TmpDir""/all_genes_genebody.bed"
 BaseDir=/scratch/Users/zama8258/processed_nascent
 Infile="$BaseDir"/fpkm/C413_1_S3_R1_001.trim.sorted.isoform_max.bed
+
 outFull="$BaseDir"/counts/counts_full.txt
-outInr="$BaseDir"/counts/counts_initiatior.txt
+outInr="$BaseDir"/counts/counts_initiaton.txt
 outGenebody="$BaseDir"/counts/counts_genebody.txt
+
 safFull="$BaseDir"/counts/full.saf
 safInr="$BaseDir"/counts/initiation.saf
 safGenebody="$BaseDir"/counts/genebody.saf
