@@ -54,9 +54,9 @@ logr "Parsed Params: ""$regionFile"", ""$imgOut"
 
 logr "Starting Analysis"
 srcDir=/scratch/Users/zama8258/pause_analysis_src
-numRegions=1000
+numRegions=100
 tmpdir=$(mktemp -d)
-# tmpdir=/scratch/Users/zama8258/processed_nascent/metagene/
+# tmpdir=/scratch/Users/zama8258/taf1_drosophila_pro_seq/output/metagene
 
 NUM_CORES=8
 safFile="$tmpdir"/region_split.saf
@@ -73,7 +73,7 @@ python3 "$srcDir"/bedgraph_split_for_metagene.py \
 				-o "$safFile"
 
 logr "Changing Directories"
-cd /scratch/Users/zama8258/processed_nascent_testing/mapped/bams || exit
+cd /scratch/Users/zama8258/taf1_drosophila_pro_seq/mapped/bams || exit
 logr "Building Sense Counts Table from SAF"
 /scratch/Users/zama8258/subread-1.6.2-Linux-x86_64/bin/featureCounts \
 		-T "$NUM_CORES" \
@@ -82,10 +82,12 @@ logr "Building Sense Counts Table from SAF"
 		-F 'SAF' \
 		-a "$safFile" \
 		-o "$countsSenseOut" \
-		C413_1_S3_R1_001.sorted.bam \
-		C413_2_S4_R1_001.sorted.bam \
-		PO_1_S1_R1_001.sorted.bam \
-		PO_2_S2_R1_001.sorted.bam
+		Control_1_S1_R1_001.sorted.bam \
+		Control_2_S2_R1_001.sorted.bam \
+		Control_3_S3_R1_001.sorted.bam \
+		Taf_1_S4_R1_001.sorted.bam \
+		Taf_2_S5_R1_001.sorted.bam \
+		Taf_3_S6_R1_001.sorted.bam
 
 logr "Building Antisense Counts Table from SAF"
 /scratch/Users/zama8258/subread-1.6.2-Linux-x86_64/bin/featureCounts \
@@ -95,17 +97,19 @@ logr "Building Antisense Counts Table from SAF"
 		-F 'SAF' \
 		-a "$safFile" \
 		-o "$countsAntiSenseOut" \
-		C413_1_S3_R1_001.sorted.bam \
-		C413_2_S4_R1_001.sorted.bam \
-		PO_1_S1_R1_001.sorted.bam \
-		PO_2_S2_R1_001.sorted.bam
+		Control_1_S1_R1_001.sorted.bam \
+		Control_2_S2_R1_001.sorted.bam \
+		Control_3_S3_R1_001.sorted.bam \
+		Taf_1_S4_R1_001.sorted.bam \
+		Taf_2_S5_R1_001.sorted.bam \
+		Taf_3_S6_R1_001.sorted.bam
 
 logr "Fixing Counts File"
 tail -n+2 "$countsSenseOut" > "$countsSenseFix"
 tail -n+2 "$countsAntiSenseOut" > "$countsAntiSenseFix"
 
 logr "Generating Figure"
-Rscript "$srcDir"/metagene_graph_custom.r \
+Rscript "$srcDir"/drosophila/metagene_graph_custom.r \
 				-s "$countsSenseFix" \
 				-a "$countsAntiSenseFix" \
 				-n "$numRegions" \

@@ -8,24 +8,28 @@
 #SBATCH --error=/scratch/Users/zama8258/processed_nascent/e_and_o/%x_%j.err
 
 # Bed files
-beddir=/scratch/Users/zama8258/processed_nascent/bedtools
-cr1="$beddir"/C413_1_S3_R1_001.trim.bedGraph
-cr2="$beddir"/C413_2_S4_R1_001.trim.bedGraph
-pr1="$beddir"/PO_1_S1_R1_001.trim.bedGraph
-pr2="$beddir"/PO_2_S2_R1_001.trim.bedGraph
+beddir=/scratch/Users/zama8258/taf1_drosophila_pro_seq/mapped/bedgraphs
+cr1="$beddir"/Control_1_S1_R1_001.bedGraph
+cr2="$beddir"/Control_2_S2_R1_001.bedGraph
+cr3="$beddir"/Control_3_S3_R1_001.bedGraph
+pr1="$beddir"/Taf_1_S4_R1_001.bedGraph
+pr2="$beddir"/Taf_2_S5_R1_001.bedGraph
+pr3="$beddir"/Taf_3_S6_R1_001.bedGraph
 
 # FPKM files
-fpkmdir=/scratch/Users/zama8258/processed_nascent/fpkm
-cr1f="$fpkmdir"/C413_1_S3_R1_001.trim.sorted.isoform_max.bed
-cr2f="$fpkmdir"/C413_2_S4_R1_001.trim.sorted.isoform_max.bed
-pr1f="$fpkmdir"/PO_1_S1_R1_001.trim.sorted.isoform_max.bed
-pr2f="$fpkmdir"/PO_2_S2_R1_001.trim.sorted.isoform_max.bed
+fpkmdir=/scratch/Users/zama8258/taf1_drosophila_pro_seq/scratch/fpkm
+cr1f="$fpkmdir"/Control_1_S1_R1_001.sorted.isoform_max.bed
+cr2f="$fpkmdir"/Control_2_S2_R1_001.sorted.isoform_max.bed
+cr3f="$fpkmdir"/Control_3_S3_R1_001.sorted.isoform_max.bed
+pr1f="$fpkmdir"/Taf_1_S4_R1_001.sorted.isoform_max.bed
+pr2f="$fpkmdir"/Taf_2_S5_R1_001.sorted.isoform_max.bed
+pr3f="$fpkmdir"/Taf_3_S6_R1_001.sorted.isoform_max.bed
 
-outdir=/scratch/Users/zama8258/pause_output/testing
+outdir=/scratch/Users/zama8258/taf1_drosophila_pro_seq/output/pausing
 script=/scratch/Users/zama8258/pause_analysis_src/calculate_pause_index_to_polya.sh
 upstream=-30
 downstream=300
-tag=TEST
+tag=PROD
 
 bash "$script" \
 		 --ref="$cr1f" \
@@ -42,6 +46,13 @@ bash "$script" \
 		 --outdir="$outdir" \
 		 --bedfile="$cr2" &
 bash "$script" \
+		 --ref="$cr3f" \
+		 --pus="$upstream" \
+		 --pds="$downstream" \
+		 --gds="$tag" \
+		 --outdir="$outdir" \
+		 --bedfile="$cr3" &
+bash "$script" \
 		 --ref="$pr1f" \
 		 --pus="$upstream" \
 		 --pds="$downstream" \
@@ -55,6 +66,13 @@ bash "$script" \
 		 --gds="$tag" \
 		 --outdir="$outdir" \
 		 --bedfile="$pr2" &
+bash "$script" \
+		 --ref="$pr3f" \
+		 --pus="$upstream" \
+		 --pds="$downstream" \
+		 --gds="$tag" \
+		 --outdir="$outdir" \
+		 --bedfile="$pr3" &
 wait
 
 # ScriptDir=/scratch/Users/zama8258/pause_analysis_src

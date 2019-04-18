@@ -3,8 +3,8 @@
 set -euo pipefail
 
 echo "Submitting Metagene Jobs for TAF1 Knockdown"
-fileDir=/scratch/Users/zama8258/processed_nascent/metagene
-outDir=/scratch/Users/zama8258/pause_output
+fileDir=/scratch/Users/zama8258/taf1_drosophila_pro_seq/output/metagene
+outDir="$fileDir"
 
 topGenes="$fileDir"/topGenes.bed
 middleGenes="$fileDir"/middleGenes.bed
@@ -14,15 +14,15 @@ topOut="$outDir"/metagene_top.png
 middleOut="$outDir"/metagene_middle.png
 bottomOut="$outDir"/metagene_bottom.png
 
-shortGenes="$fileDir"/shortGenes.bed
-mediumGenes="$fileDir"/mediumGenes.bed
-mediumLongGenes="$fileDir"/mediumLongGenes.bed
-longGenes="$fileDir"/longGenes.bed
+# shortGenes="$fileDir"/shortGenes.bed
+# mediumGenes="$fileDir"/mediumGenes.bed
+# mediumLongGenes="$fileDir"/mediumLongGenes.bed
+# longGenes="$fileDir"/longGenes.bed
 
-shortOut="$outDir"/metagene_shortGenes.png
-mediumOut="$outDir"/metagene_mediumGenes.png
-mediumLongOut="$outDir"/metagene_mediumLongGenes.png
-longOut="$outDir"/metagene_longGenes.png
+# shortOut="$outDir"/metagene_shortGenes.png
+# mediumOut="$outDir"/metagene_mediumGenes.png
+# mediumLongOut="$outDir"/metagene_mediumLongGenes.png
+# longOut="$outDir"/metagene_longGenes.png
 
 sbatch metagene_custom.bash --regions="$topGenes" --outfile="$topOut"
 sbatch metagene_custom.bash --regions="$middleGenes" --outfile="$middleOut"

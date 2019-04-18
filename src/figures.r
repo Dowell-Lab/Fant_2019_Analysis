@@ -4,39 +4,39 @@ suppressMessages(library(GenomicFeatures))
 suppressMessages(library(GenomicRanges))
 suppressMessages(library(rtracklayer))
 
-## Parse arguments
-args <- commandArgs(TRUE)
+## ## Parse arguments
+## args <- commandArgs(TRUE)
 
-## Default setting when no arguments passed
-if (length(args) < 1) {
-    args <- c("--help")
-}
+## ## Default setting when no arguments passed
+## if (length(args) < 1) {
+##     args <- c("--help")
+## }
 
-## Help section
-if ("--help" %in% args) {
-    cat("
-Generate Figures for a Given SRR
+## ## Help section
+## if ("--help" %in% args) {
+##     cat("
+## Generate Figures for a Given SRR
 
-Arguments:
-   --srr=SRR000000 - SRR Number
-   --help          - Print this help message
+## Arguments:
+##    --srr=SRR000000 - SRR Number
+##    --help          - Print this help message
  
-Example:
-   ./calc_pausing_indices.r --srr=SRR123456 \n\n")
+## Example:
+##    ./calc_pausing_indices.r --srr=SRR123456 \n\n")
     
-    q(save = "no")
-}
+##     q(save = "no")
+## }
 
 ## Parse arguments (we expect the form --arg=value)
-parseArgs <- function(x) strsplit(sub("^--", "", x), "=")
-argsDF <- as.data.frame(do.call("rbind", parseArgs(args)))
-argsL <- as.list(as.character(argsDF$V2))
-srr <- argsL
+## parseArgs <- function(x) strsplit(sub("^--", "", x), "=")
+## argsDF <- as.data.frame(do.call("rbind", parseArgs(args)))
+## argsL <- as.list(as.character(argsDF$V2))
+## srr <- argsL
 
-if (is.null(srr)) {
-    warningr("You must provide an SRR")
-    q()
-}
+## if (is.null(srr)) {
+##     warningr("You must provide an SRR")
+##     q()
+## }
 
 srr <- "SRR2084576"
 message(str_c("SRR is: ", srr))
@@ -60,10 +60,10 @@ ts <- transcripts(rgdb)
 tsd <- as.tibble(ts)
 colnames(tsd)[colnames(tsd) == "tx_id"] <- "GeneID"
 
-prd2000 <- read_delim(str_c("/scratch/Users/zama8258/pause_output/", srr, "_pause_ratios_2000.data"), 
-    col_names = c("tx_name", "strand", "Pause_2000"), delim = " ")
-prd5000 <- read_delim(str_c("/scratch/Users/zama8258/pause_output/", srr, "_pause_ratios_5000.data"), 
-    col_names = c("tx_name", "strand", "Pause_5000"), delim = " ")
+prd2000 <- read_delim(str_c("/scratch/Users/zama8258/pause_output/", srr, "_pause_ratios_2000.data"),
+                      col_names = c("tx_name", "strand", "Pause_2000"), delim = " ")
+prd5000 <- read_delim(str_c("/scratch/Users/zama8258/pause_output/", srr, "_pause_ratios_5000.data"),
+                      col_names = c("tx_name", "strand", "Pause_5000"), delim = " ")
 
 ddt <- as.tibble(merge(x = dd, y = tsd[, c("tx_name", "GeneID")], by.x = "GeneID", 
     by.y = "GeneID", all.x = TRUE))
@@ -87,20 +87,23 @@ library(ggthemes)
 ## 2k vs 5k
 ggplot(data = ddt, mapping = aes(x = Pause_2000, y = Pause_5000), alpha = 1/10) + 
     geom_jitter() + geom_abline(aes(intercept = 0, slope = 1)) + theme_tufte() + 
-    labs(x = "2kb Fixed Window", y = "5kb Fixed Window", title = "Comparison of Pausing Index Methods")
+    labs(x = "2kb Fixed Window", y = "5kb Fixed Window", title = "Comparison of Pausing Index Methods") +
+    xlim(0, 1000) + ylim(0, 1000)
 ggsave(str_c("/scratch/Users/zama8258/pause_output/", srr, "_comparison_2k_5k.png"), 
-    plot = last_plot(), device = "png")
+       plot = last_plot(), device = "png")
 
 ## Core vs 5k
 ggplot(data = ddf, mapping = aes(x = Pause, y = Pause_5000), alpha = 1/10) + geom_jitter() + 
     geom_abline(aes(intercept = 0, slope = 1)) + theme_tufte() + labs(x = "Core 2008 Method", 
-    y = "5kb Fixed Window", title = "Comparison of Pausing Index Methods")
+                                                                      y = "5kb Fixed Window", title = "Comparison of Pausing Index Methods") +
+    xlim(0, 1000) + ylim(0, 1000)
 ggsave(str_c("/scratch/Users/zama8258/pause_output/", srr, "_comparison_Core_5k.png"), 
-    plot = last_plot(), device = "png")
+       plot = last_plot(), device = "png")
 
 ## Core vs 2k
 ggplot(data = ddt, mapping = aes(x = Pause, y = Pause_2000), alpha = 1/10) + geom_jitter() + 
     geom_abline(aes(intercept = 0, slope = 1)) + theme_tufte() + labs(x = "Core 2008 Method", 
-    y = "2kb Fixed Window", title = "Comparison of Pausing Index Methods")
-ggsave(str_c("/scratch/Users/zama8258/pause_output/", srr, "_comparison_Core_2k.png"), 
-    plot = last_plot(), device = "png")
+                                                                      y = "2kb Fixed Window", title = "Comparison of Pausing Index Methods") +
+    xlim(0, 1000) + ylim(0, 1000)
+ggsave(str_c("/scratch/Users/zama8258/pause_output/", srr, "_comparison_Core_2k.png"),
+       plot = last_plot(), device = "png")
