@@ -47,12 +47,19 @@ plt <- function(frame, prefix) {
              title= "Change in Pausing Index") +
         scale_x_log10() + scale_y_log10()
     ggsave(
-        str_c(prefix, "_scatter.png"),
-        plot = last_plot(), device = "png")
+        str_c(prefix, "_scatter.pdf"),
+        plot = last_plot(), device = "pdf")
 
+    ## Calculate Significance
+    k <- ks.test(frame$p_pause_mean, frame$c_pause_mean)
+    p <- k$p.value
+    annotation <- paste0("p = ", p)
+    print(annotation)
+    
     ## 301 ecdf
     ggplot(data = frame) +
         stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
+        annotate("text", x = -Inf, y = Inf, vjust = 1, hjust = 0, label = annotation) +
         theme_tufte() +
         scale_color_npg() +
         theme(legend.title=element_blank()) +
@@ -61,8 +68,8 @@ plt <- function(frame, prefix) {
              title= "Cumulative Distribution") +
         scale_x_log10()
     ggsave(
-        str_c(prefix, "_ecdf.png"),
-        plot = last_plot(), device = "png")
+        str_c(prefix, "_ecdf.pdf"),
+        plot = last_plot(), device = "pdf")
 
     ## MA-ish plot
     ggplot(data = frame, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
@@ -75,17 +82,21 @@ plt <- function(frame, prefix) {
         scale_x_log10() +
         ## scale_y_log10()
         ggsave(
-            str_c(prefix, "_MA.png"),
-            plot = last_plot(), device = "png")
+            str_c(prefix, "_MA.pdf"),
+            plot = last_plot(), device = "pdf")
 }
 
 plt(ddt_301, "allgenes")
 
 xfer <- read_delim("drosophila_refseq_to_common_id.txt", delim=" ",
                    col_names = c("tx_name", "name"))
+paused_genes <- read_delim("genelist-paused.txt", delim="\t")
 prox_genes <- read_delim("genelist-Prox.txt", delim="\t")
 dist_genes <- read_delim("genelist-Dist.txt", delim="\t")
 
+paused_ddt <- left_join(ddt_301, xfer) %>%
+    left_join(paused_genes) %>%
+    na.omit(cols = c(genename))
 prox_ddt <- left_join(ddt_301, xfer) %>%
     left_join(prox_genes) %>%
     na.omit(cols = c(genename))
@@ -93,5 +104,6 @@ dist_ddt <- left_join(ddt_301, xfer) %>%
     left_join(dist_genes) %>%
     na.omit(cols = c(genename))
 
+plt(paused_ddt, "paused")
 plt(prox_ddt, "proximal")
-plt(prox_ddt, "distal")
+plt(dist_ddt, "distal")

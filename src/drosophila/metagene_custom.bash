@@ -19,7 +19,7 @@ usage()
 		echo "Usage:"
 		echo "    -h/--help -- Display this help message."
 		echo "    --regions -- Reference file to use"
-		echo "    --outfile -- Pausing bases upstream"
+		echo "    --outfile -- Output directory"
 		exit 0
 }
 
@@ -54,9 +54,9 @@ logr "Parsed Params: ""$regionFile"", ""$imgOut"
 
 logr "Starting Analysis"
 srcDir=/scratch/Users/zama8258/pause_analysis_src
-numRegions=100
+numRegions=25
 tmpdir=$(mktemp -d)
-# tmpdir=/scratch/Users/zama8258/taf1_drosophila_pro_seq/output/metagene
+# tmpdir=/scratch/Users/zama8258/taf1_drosophila_pro_seq/output/metaplot_proxdist
 
 NUM_CORES=8
 safFile="$tmpdir"/region_split.saf

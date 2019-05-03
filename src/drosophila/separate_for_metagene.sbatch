@@ -28,8 +28,9 @@
 set -euo pipefail
 
 # Data read-in and tmp files
-srcBed=/scratch/Users/zama8258/taf1_drosophila_pro_seq/scratch/fpkm/Control_1_S1_R1_001.sorted.isoform_max
-scratch=/scratch/Users/zama8258/taf1_drosophila_pro_seq/output/metagene
+BaseDir=/scratch/Users/zama8258/taf1_drosophila_pro_seq
+srcBed="$BaseDir"/scratch/fpkm/Control_1_S1_R1_001.sorted.isoform_max
+scratch="$BaseDir"/output/metagene
 filtered="$scratch"/lenfilter.fpkm
 sorted="$scratch"/sorted.fpkm
 

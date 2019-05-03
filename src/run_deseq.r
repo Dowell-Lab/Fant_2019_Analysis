@@ -39,13 +39,14 @@ makefig <- function(deseqdata, fileprefix) {
                 file = paste0(fileprefix, "-genes_for_gsea.txt"), row.names = TRUE,
                 quote = FALSE)
     write.table(res, file = paste0(fileprefix, "-DESeq.res.txt"), append = FALSE, sep = "\t")
+    return(res)
 }
 
 ## To filter out only the genes we've used and convert to common ID
 idConvert <- read_delim("refseq_to_common_id.txt",
                         col_names = c("rowname", "common"), delim = " ")
 ## Experimental condition
-condition <- factor(c(rep("treated", 2), rep("untreated", 2)), levels=c("untreated", "treated"))
+condition <- factor(c(rep("treated", 3), rep("untreated", 3)), levels=c("untreated", "treated"))
 
 #################################################
 ## Initial Processing for Correct Size Factors ##
@@ -57,7 +58,14 @@ condition <- factor(c(rep("treated", 2), rep("untreated", 2)), levels=c("untreat
 correct_seqdata <- read.delim("counts_genebody.txt_without_header", stringsAsFactors = FALSE, header = TRUE,
                               row.names = 1)
 ## Then, we filter to only include the resolved isoforms
-correct_df <- as.tibble(rownames_to_column(correct_seqdata))
+correct_df <- as_tibble(rownames_to_column(correct_seqdata))
+
+## For DROSOPHILA
+if (!is.null(correct_df$rowname)) {
+    correct_df$common <- correct_df$rowname
+    correct_df$rowname <- NULL
+}
+
 correct_dt <- data.frame(correct_df)
 rownames(correct_dt) <- correct_dt$common
 correct_dt$common <- NULL
@@ -65,7 +73,6 @@ correct_dt$common <- NULL
 ## Now, actually perform DE-Seq
 correct_countdata <- correct_dt[, 6:ncol(correct_dt)]
 correct_countdata <- as.matrix(correct_countdata)
-correct_countdata <- correct_countdata %>% subset(select = -c(Length))
 
 correct_coldata <- data.frame(row.names = colnames(correct_countdata), condition)
 
@@ -86,10 +93,14 @@ sizes <- c(sizeFactors(cds))
 full_seqdata <- read.delim("counts_full.txt_without_header", stringsAsFactors = FALSE, header = TRUE,
                            row.names = 1)
 ## Then, we filter to only include the resolved isoforms
-full_df <- as.tibble(rownames_to_column(full_seqdata))
-## full_df <- inner_join(ids, full_df, by="rowname")
-## full_df <- inner_join(full_df, idConvert, by = "rowname") %>% subset(select = -c(rowname)) %>%
-## distinct(common, .keep_all = TRUE)
+full_df <- as_tibble(rownames_to_column(full_seqdata))
+
+## For DROSOPHILA
+if (!is.null(full_df$rowname)) {
+    full_df$common <- full_df$rowname
+    full_df$rowname <- NULL
+}
+
 full_dt <- data.frame(full_df)
 rownames(full_dt) <- full_dt$common
 full_dt$common <- NULL
@@ -97,7 +108,6 @@ full_dt$common <- NULL
 ## Now, actually perform DE-Seq
 full_countdata <- full_dt[, 6:ncol(full_dt)]
 full_countdata <- as.matrix(full_countdata)
-full_countdata <- full_countdata %>% subset(select = -c(Length))
 
 full_coldata <- data.frame(row.names = colnames(full_countdata), condition)
 
@@ -108,17 +118,21 @@ dds <- DESeq(dds)
 makefig(dds, "fullgene")
 
 ######################################################
-## Finally, use the initiation region only          ##
+         ## Finally, use the initiation region only          ##
 ######################################################
 
 ## We have to fix the counts table by removing the first row, hence "counts_fix.txt"
 initiation_seqdata <- read.delim("counts_initiation.txt_without_header", stringsAsFactors = FALSE, header = TRUE,
                                  row.names = 1)
 ## Then, we filter to only include the resolved isoforms
-initiation_df <- as.tibble(rownames_to_column(initiation_seqdata))
-## initiation_df <- inner_join(ids, initiation_df, by="rowname")
-## initiation_df <- inner_join(initiation_df, idConvert, by = "rowname") %>% subset(select = -c(rowname)) %>%
-## distinct(common, .keep_all = TRUE)
+initiation_df <- as_tibble(rownames_to_column(initiation_seqdata))
+
+## For DROSOPHILA
+if (!is.null(initiation_df$rowname)) {
+    initiation_df$common <- initiation_df$rowname
+    initiation_df$rowname <- NULL
+}
+
 initiation_dt <- data.frame(initiation_df)
 rownames(initiation_dt) <- initiation_dt$common
 initiation_dt$common <- NULL
@@ -126,7 +140,6 @@ initiation_dt$common <- NULL
 ## Now, actually perform DE-Seq
 initiation_countdata <- initiation_dt[, 6:ncol(initiation_dt)]
 initiation_countdata <- as.matrix(initiation_countdata)
-initiation_countdata <- initiation_countdata %>% subset(select = -c(Length))
 
 initiation_coldata <- data.frame(row.names = colnames(initiation_countdata), condition)
 

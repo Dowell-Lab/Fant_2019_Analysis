@@ -2,14 +2,14 @@ suppressMessages(library("tidyverse"))
 library(ggthemes)
 library(ggsci)
 
-## Well expressed genes
+## Genesets we're interested in
 wellexpr <- read_delim("expressed_genes_filtertable.txt", col_names=c("name", 'tx_name'), delim="\t")
 inr <- read_delim("hg38_matched_genes_BBCABW.data", col_names=c("name", 'sequence'), delim="\t")
 mte <- read_delim("hg38_matched_genes_CGANC....CGG.data", col_names=c("name", 'sequence'), delim="\t")
 dpe <- read_delim("hg38_matched_genes_RGWYVT.data", col_names=c("name", 'sequence'), delim="\t")
 tata <- read_delim("hg38_matched_genes_WWWW.data", col_names=c("name", 'sequence'), delim="\t")
 
-## Generate figures...
+## Filter and subset data
 c_1_301 <- read_delim("C413_1_S3_R1_001.trim.rpkm.bedGraph_pause_ratios_301.data",
                      col_names=c('tx_name', 'strand', 'c_1_301', 'coverage_c1_301'), delim=" ") %>%
     subset(select=-strand)
@@ -59,862 +59,81 @@ ddt_301_wellexpressed_tata_and_dpe <- subset(ddt_301_wellexpressed, tx_name %in%
 ddt_301_all <- subset(ddt_301, tx_name %in% inr$name & tx_name %in% tata$name &
                               tx_name %in% dpe$name & tx_name %in% mte$name)
 
-## 301 scatter
-ggplot(data = ddt_301, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-theme_tufte() +
-scale_fill_gsea() +
-labs(x = "Control",
-     y= "Treatment",
-     title= "Change in Pausing Index") +
-scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301 ecdf
-ggplot(data = ddt_301) +
-stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-theme_tufte() +
-scale_color_npg() +
-theme(legend.title=element_blank()) +
-labs(x = "Pausing Index",
-     y= "Cumulative Distribution",
-     title= "Cumulative Distribution") +
-scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-fddt_301 <- filter(ddt_301, pause_diff > -6e-5)
-
-## MA-ish plot
-ggplot(data = ddt_301, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-scale_fill_gsea() +
-theme_tufte() +
-labs(x = "Normalized Coverage Level",
-     y= "Change in Pause Index",
-     title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-scale_x_log10() +
-## scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_MA.png"),
-    plot = last_plot(), device = "png")
-
-################################################################################
-################################################################################
-################################################################################
-
-## 301_wellexpressed scatter
-ggplot(data = ddt_301_wellexpressed, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-theme_tufte() +
-scale_fill_gsea() +
-labs(x = "Control",
-     y= "Treatment",
-     title= "Change in Pausing Index") +
-scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301_wellexpressed ecdf
-ggplot(data = ddt_301_wellexpressed) +
-stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-theme_tufte() +
-scale_color_npg() +
-theme(legend.title=element_blank()) +
-labs(x = "Pausing Index",
-     y= "Cumulative Distribution",
-     title= "Cumulative Distribution") +
-scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-fddt_301_wellexpressed <- filter(ddt_301_wellexpressed, pause_diff > -6e-5)
-
-## MA-ish plot
-ggplot(data = ddt_301_wellexpressed, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-scale_fill_gsea() +
-theme_tufte() +
-labs(x = "Normalized Coverage Level",
-     y= "Change in Pause Index",
-     title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-scale_x_log10() +
-## scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_MA.png"),
-    plot = last_plot(), device = "png")
-
-## 301_wellexpressed_tata scatter
-ggplot(data = ddt_301_wellexpressed_tata, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-theme_tufte() +
-scale_fill_gsea() +
-labs(x = "Control",
-     y= "Treatment",
-     title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_tata_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301_wellexpressed_tata ecdf
-ggplot(data = ddt_301_wellexpressed_tata) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_tata_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-fddt_301_wellexpressed_tata <- filter(ddt_301_wellexpressed_tata, pause_diff > -6e-5)
-
-## MA-ish plot
-ggplot(data = ddt_301_wellexpressed_tata, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
+plt <- function(frame, prefix) {
+    ## 301 scatter
+    ggplot(data = frame, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
+        geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
+        theme_tufte() +
+        scale_fill_gsea() +
+        labs(x = "Control",
+             y= "Treatment",
+             title= "Change in Pausing Index") +
+        scale_x_log10() + scale_y_log10()
     ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_tata_MA.png"),
+        str_c(prefix, "_scatter.png"),
         plot = last_plot(), device = "png")
 
-## 301_wellexpressed_dpe scatter
-ggplot(data = ddt_301_wellexpressed_dpe, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-    theme_tufte() +
-    scale_fill_gsea() +
-    labs(x = "Control",
-         y= "Treatment",
-         title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_dpe_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301_wellexpressed_dpe ecdf
-ggplot(data = ddt_301_wellexpressed_dpe) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_dpe_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-fddt_301_wellexpressed_dpe <- filter(ddt_301_wellexpressed_dpe, pause_diff > -6e-5)
-
-## MA-ish plot
-ggplot(data = ddt_301_wellexpressed_dpe, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
+    ## Calculate Significance
+    k <- ks.test(frame$p_pause_mean, frame$c_pause_mean)
+    p <- k$p.value
+    annotation <- paste0(prefix, ": p = ", p)
+    print(annotation)
+    writelines(annotation)
+    
+    ## 301 ecdf
+    ggplot(data = frame) +
+        stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
+        annotate("text", x = -Inf, y = Inf, vjust = 1, hjust = 0, label = annotation) +
+        theme_tufte() +
+        scale_color_npg() +
+        theme(legend.title=element_blank()) +
+        labs(x = "Pausing Index",
+             y= "Cumulative Distribution",
+             title= "Cumulative Distribution") +
+        scale_x_log10()
     ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_dpe_MA.png"),
+        str_c(prefix, "_ecdf.png"),
         plot = last_plot(), device = "png")
 
-## 301_wellexpressed_mte scatter
-ggplot(data = ddt_301_wellexpressed_mte, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-    theme_tufte() +
-    scale_fill_gsea() +
-    labs(x = "Control",
-         y= "Treatment",
-         title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_mte_scatter.png"),
-    plot = last_plot(), device = "png")
+    ## MA-ish plot
+    ggplot(data = frame, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
+        geom_bin2d(bins=75) + geom_hline(yintercept=0) +
+        scale_fill_gsea() +
+        theme_tufte() +
+        labs(x = "Normalized Coverage Level",
+             y= "Change in Pause Index",
+             title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
+        scale_x_log10() +
+        ## scale_y_log10()
+        ggsave(
+            str_c(prefix, "_MA.png"),
+            plot = last_plot(), device = "png")
+}
 
-## 301_wellexpressed_mte ecdf
-ggplot(data = ddt_301_wellexpressed_mte) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_mte_ecdf.png"),
-    plot = last_plot(), device = "png")
+## Full gene sets
+plt(ddt_301, "allgenes")
+plt(ddt_301_wellexpressed, "wellexpressed")
 
-fddt_301_wellexpressed_mte <- filter(ddt_301_wellexpressed_mte, pause_diff > -6e-5)
+## Single element subsets
+plt(ddt_301_inr, "inr")
+plt(ddt_301_mte, "mte")
+plt(ddt_301_dpe, "dpe")
+plt(ddt_301_tata, "tata")
 
-## MA-ish plot
-ggplot(data = ddt_301_wellexpressed_mte, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
-    ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_mte_MA.png"),
-        plot = last_plot(), device = "png")
+plt(ddt_301_wellexpressed_inr, "wellexpressed_inr")
+plt(ddt_301_wellexpressed_mte, "wellexpressed_mte")
+plt(ddt_301_wellexpressed_dpe, "wellexpressed_dpe")
+plt(ddt_301_wellexpressed_tata, "wellexpressed_tata")
 
-## 301_wellexpressed_inr scatter
-ggplot(data = ddt_301_wellexpressed_inr, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-    theme_tufte() +
-    scale_fill_gsea() +
-    labs(x = "Control",
-         y= "Treatment",
-         title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_inr_scatter.png"),
-    plot = last_plot(), device = "png")
+## Multiple element subsets
+plt(ddt_301_inr_and_mte, "inr_and_mte")
+plt(ddt_301_inr_and_dpe, "inr_and_dpe")
+plt(ddt_301_inr_and_tata, "inr_and_tata")
+plt(ddt_301_tata_and_mte, "tata_and_mte")
+plt(ddt_301_tata_and_dpe, "tata_and_dpe")
 
-## 301_wellexpressed_inr ecdf
-ggplot(data = ddt_301_wellexpressed_inr) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_inr_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-fddt_301_wellexpressed_inr <- filter(ddt_301_wellexpressed_inr, pause_diff > -6e-5)
-
-## MA-ish plot
-ggplot(data = ddt_301_wellexpressed_inr, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
-    ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_inr_MA.png"),
-        plot = last_plot(), device = "png")
-
-################################################################################
-################################################################################
-################################################################################
-
-## 301_tata scatter
-ggplot(data = ddt_301_tata, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-    theme_tufte() +
-    scale_fill_gsea() +
-    labs(x = "Control",
-         y= "Treatment",
-         title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_tata_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301_tata ecdf
-ggplot(data = ddt_301_tata) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_tata_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-fddt_301_tata <- filter(ddt_301_tata, pause_diff > -6e-5)
-
-## MA-ish plot
-ggplot(data = ddt_301_tata, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
-    ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_tata_MA.png"),
-        plot = last_plot(), device = "png")
-
-## 301_dpe scatter
-ggplot(data = ddt_301_dpe, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-    theme_tufte() +
-    scale_fill_gsea() +
-    labs(x = "Control",
-         y= "Treatment",
-         title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_dpe_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301_dpe ecdf
-ggplot(data = ddt_301_dpe) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_dpe_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-fddt_301_dpe <- filter(ddt_301_dpe, pause_diff > -6e-5)
-
-## MA-ish plot
-ggplot(data = ddt_301_dpe, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
-    ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_dpe_MA.png"),
-        plot = last_plot(), device = "png")
-
-## 301_mte scatter
-ggplot(data = ddt_301_mte, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-    theme_tufte() +
-    scale_fill_gsea() +
-    labs(x = "Control",
-         y= "Treatment",
-         title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_mte_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301_mte ecdf
-ggplot(data = ddt_301_mte) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_mte_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-fddt_301_mte <- filter(ddt_301_mte, pause_diff > -6e-5)
-
-## MA-ish plot
-ggplot(data = ddt_301_mte, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
-    ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_mte_MA.png"),
-        plot = last_plot(), device = "png")
-
-## 301_inr scatter
-ggplot(data = ddt_301_inr, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-    theme_tufte() +
-    scale_fill_gsea() +
-    labs(x = "Control",
-         y= "Treatment",
-         title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_inr_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301_inr ecdf
-ggplot(data = ddt_301_inr) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_inr_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-fddt_301_inr <- filter(ddt_301_inr, pause_diff > -6e-5)
-
-## MA-ish plot
-ggplot(data = ddt_301_inr, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
-    ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_inr_MA.png"),
-        plot = last_plot(), device = "png")
-
-################################################################################
-################################################################################
-################################################################################
-
-## 301_inr_and_mte scatter
-ggplot(data = ddt_301_inr_and_mte, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-    theme_tufte() +
-    scale_fill_gsea() +
-    labs(x = "Control",
-         y= "Treatment",
-         title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_inr_and_mte_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301_inr_and_mte ecdf
-ggplot(data = ddt_301_inr_and_mte) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_inr_and_mte_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-## MA-ish plot
-ggplot(data = ddt_301_inr_and_mte, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
-    ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_inr_and_mte_MA.png"),
-        plot = last_plot(), device = "png")
-
-## 301_inr_and_dpe scatter
-ggplot(data = ddt_301_inr_and_dpe, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-    theme_tufte() +
-    scale_fill_gsea() +
-    labs(x = "Control",
-         y= "Treatment",
-         title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_inr_and_dpe_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301_inr_and_dpe ecdf
-ggplot(data = ddt_301_inr_and_dpe) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_inr_and_dpe_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-## MA-ish plot
-ggplot(data = ddt_301_inr_and_dpe, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
-    ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_inr_and_dpe_MA.png"),
-        plot = last_plot(), device = "png")
-
-## 301_inr_and_tata scatter
-ggplot(data = ddt_301_inr_and_tata, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-    theme_tufte() +
-    scale_fill_gsea() +
-    labs(x = "Control",
-         y= "Treatment",
-         title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_inr_and_tata_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301_inr_and_tata ecdf
-ggplot(data = ddt_301_inr_and_tata) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_inr_and_tata_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-## MA-ish plot
-ggplot(data = ddt_301_inr_and_tata, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
-    ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_inr_and_tata_MA.png"),
-        plot = last_plot(), device = "png")
-
-## 301_tata_and_mte scatter
-ggplot(data = ddt_301_tata_and_mte, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-    theme_tufte() +
-    scale_fill_gsea() +
-    labs(x = "Control",
-         y= "Treatment",
-         title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_tata_and_mte_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301_tata_and_mte ecdf
-ggplot(data = ddt_301_tata_and_mte) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_tata_and_mte_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-## MA-ish plot
-ggplot(data = ddt_301_tata_and_mte, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
-    ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_tata_and_mte_MA.png"),
-        plot = last_plot(), device = "png")
-
-## 301_tata_and_dpe scatter
-ggplot(data = ddt_301_tata_and_dpe, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-    theme_tufte() +
-    scale_fill_gsea() +
-    labs(x = "Control",
-         y= "Treatment",
-         title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_tata_and_dpe_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301_tata_and_dpe ecdf
-ggplot(data = ddt_301_tata_and_dpe) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_tata_and_dpe_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-## MA-ish plot
-ggplot(data = ddt_301_tata_and_dpe, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
-    ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_tata_and_dpe_MA.png"),
-        plot = last_plot(), device = "png")
-
-################################################################################
-################################################################################
-################################################################################
-
-## 301_wellexpressed_inr_and_mte scatter
-ggplot(data = ddt_301_wellexpressed_inr_and_mte, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-    theme_tufte() +
-    scale_fill_gsea() +
-    labs(x = "Control",
-         y= "Treatment",
-         title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_inr_and_mte_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301_wellexpressed_inr_and_mte ecdf
-ggplot(data = ddt_301_wellexpressed_inr_and_mte) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_inr_and_mte_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-## MA-ish plot
-ggplot(data = ddt_301_wellexpressed_inr_and_mte, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
-    ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_inr_and_mte_MA.png"),
-        plot = last_plot(), device = "png")
-
-## 301_wellexpressed_inr_and_dpe scatter
-ggplot(data = ddt_301_wellexpressed_inr_and_dpe, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-    theme_tufte() +
-    scale_fill_gsea() +
-    labs(x = "Control",
-         y= "Treatment",
-         title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_inr_and_dpe_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301_wellexpressed_inr_and_dpe ecdf
-ggplot(data = ddt_301_wellexpressed_inr_and_dpe) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_inr_and_dpe_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-## MA-ish plot
-ggplot(data = ddt_301_wellexpressed_inr_and_dpe, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
-    ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_inr_and_dpe_MA.png"),
-        plot = last_plot(), device = "png")
-
-## 301_wellexpressed_inr_and_tata scatter
-ggplot(data = ddt_301_wellexpressed_inr_and_tata, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-    theme_tufte() +
-    scale_fill_gsea() +
-    labs(x = "Control",
-         y= "Treatment",
-         title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_inr_and_tata_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301_wellexpressed_inr_and_tata ecdf
-ggplot(data = ddt_301_wellexpressed_inr_and_tata) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_inr_and_tata_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-## MA-ish plot
-ggplot(data = ddt_301_wellexpressed_inr_and_tata, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
-    ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_inr_and_tata_MA.png"),
-        plot = last_plot(), device = "png")
-
-## 301_wellexpressed_tata_and_mte scatter
-ggplot(data = ddt_301_wellexpressed_tata_and_mte, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-    theme_tufte() +
-    scale_fill_gsea() +
-    labs(x = "Control",
-         y= "Treatment",
-         title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_tata_and_mte_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301_wellexpressed_tata_and_mte ecdf
-ggplot(data = ddt_301_wellexpressed_tata_and_mte) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_tata_and_mte_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-## MA-ish plot
-ggplot(data = ddt_301_wellexpressed_tata_and_mte, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
-    ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_tata_and_mte_MA.png"),
-        plot = last_plot(), device = "png")
-
-## 301_wellexpressed_tata_and_dpe scatter
-ggplot(data = ddt_301_wellexpressed_tata_and_dpe, mapping=aes(x=p_pause_mean, y=c_pause_mean), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_abline(aes(intercept=0,slope=1)) +
-    theme_tufte() +
-    scale_fill_gsea() +
-    labs(x = "Control",
-         y= "Treatment",
-         title= "Change in Pausing Index") +
-    scale_x_log10() + scale_y_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_tata_and_dpe_scatter.png"),
-    plot = last_plot(), device = "png")
-
-## 301_wellexpressed_tata_and_dpe ecdf
-ggplot(data = ddt_301_wellexpressed_tata_and_dpe) +
-    stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
-    theme_tufte() +
-    scale_color_npg() +
-    theme(legend.title=element_blank()) +
-    labs(x = "Pausing Index",
-         y= "Cumulative Distribution",
-         title= "Cumulative Distribution") +
-    scale_x_log10()
-ggsave(
-    str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_tata_and_dpe_ecdf.png"),
-    plot = last_plot(), device = "png")
-
-## MA-ish plot
-ggplot(data = ddt_301_wellexpressed_tata_and_dpe, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
-    geom_bin2d(bins=75) + geom_hline(yintercept=0) +
-    scale_fill_gsea() +
-    theme_tufte() +
-    labs(x = "Normalized Coverage Level",
-         y= "Change in Pause Index",
-         title= "MA (log2(treatment) - log2(control)) vs Coverage Level (log10)") +
-    scale_x_log10() +
-    ## scale_y_log10()
-    ggsave(
-        str_c("/scratch/Users/zama8258/pause_output/301_wellexpressed_tata_and_dpe_MA.png"),
-        plot = last_plot(), device = "png")
-
-################################################################################
-################################################################################
-################################################################################
+plt(ddt_301_wellexpressed_inr_and_mte, "wellexpressed_inr_and_mte")
+plt(ddt_301_wellexpressed_inr_and_dpe, "wellexpressed_inr_and_dpe")
+plt(ddt_301_wellexpressed_inr_and_tata, "wellexpressed_inr_and_tata")
+plt(ddt_301_wellexpressed_tata_and_mte, "wellexpressed_tata_and_mte")
+plt(ddt_301_wellexpressed_tata_and_dpe, "wellexpressed_tata_and_dpe")
