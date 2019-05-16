@@ -18,16 +18,16 @@ export LC_ALL=C
 
 usage()
 {
-		echo "filter_by_motif.sh - a script for calculating fixed-width pausing indices"
+		echo "filter_by_motif.sh - a script for filtering motifs"
 		echo "Example:"
-		echo "    ./filter_by_motif.sh --start=-100 --end=300 --motif=2000 --file=SRR0000000.bed"
+		echo "    ./filter_by_motif.sh --start=12 --end=30 --motif=TATAW --file=SRR0000000.bed"
 		echo "Usage:"
 		echo "    -h/--help -- Display this help message."
 		echo "    --start   -- Bases upstream to search from"
 		echo "    --end     -- Bases downstream to search to"
 		echo "    --fasta   -- FASTA file to pull sequences from"
 		echo "    --motif   -- Gene bases downstream"
-		echo "    --file    -- file to parse"
+		echo "    --file    -- Annotation file to parse"
 		exit 0
 }
 
@@ -84,35 +84,34 @@ OutFile=$DirPrefix/pause_output/"$name"_matched_genes_$motif.data
 #	During debugging, we write out all output to disk so that we can
 #	examine it and see what's going on with our script changes. This is
 #	not necessary during production.
-testing=true
+testing=false
 
 if $testing; then
-		# Variables	-	DEBUG
+
+		# This DEBUG mode writes files in order to examine them to find
+		# out where problems originated. This has a moderate performance
+		# hit...
 		echo "[LOG] Running ""$name"" in Debug Mode"
 		TmpDir=charli_pi
 
-		PositiveStrandGenes=$DirPrefix/$TmpDir/"$name"_"$motif"_posgenes.bed
-		NegativeStrandGenes=$DirPrefix/$TmpDir/"$name"_"$motif"_neggenes.bed
+		StrandGenes=$DirPrefix/$TmpDir/"$name"_"$motif"_genes.bed
 
-		PositiveSequences=$DirPrefix/$TmpDir/"$name"_"$motif"_posseq.bed
-		NegativeSequences=$DirPrefix/$TmpDir/"$name"_"$motif"_negseq.bed
+		Sequences=$DirPrefix/$TmpDir/"$name"_"$motif"_seq.bed
 
-		MatchedSequencesPos=$DirPrefix/$TmpDir/"$name"_"$motif"_posmatch.bed
-		MatchedSequencesNeg=$DirPrefix/$TmpDir/"$name"_"$motif"_negmatch.bed
+		MatchedSequences=$DirPrefix/$TmpDir/"$name"_"$motif"_matched.bed
 
 else
 
+		# When not debugging, read and write to /tmp/ directly in memory
+		# since it gives us a nice performance boost.
 		echo "[LOG] Running ""$file"" in Production Mode."
 		TmpDir=$(mktemp -d)
 
-		PositiveStrandGenes="$TmpDir""/""$(uuidgen)"
-		NegativeStrandGenes="$TmpDir""/""$(uuidgen)"
+		StrandGenes="$TmpDir""/""$(uuidgen)"
 
-		PositiveSequences="$TmpDir""/""$(uuidgen)"
-		NegativeSequences="$TmpDir""/""$(uuidgen)"
+		Sequences="$TmpDir""/""$(uuidgen)"
 
-		MatchedSequencesPos="$TmpDir""/""$(uuidgen)"
-		MatchedSequencesNeg="$TmpDir""/""$(uuidgen)"
+		MatchedSequences="$TmpDir""/""$(uuidgen)"
 
 		# Clean up temp files on exit
 		function cleanup {
@@ -133,7 +132,7 @@ echo "[LOG] Prefiltering ""$file"
 grep -e "^chr[0-9\\|X\\|Y]*\\s" "$InterestFile" | \
 		awk -v OFS='\t' -v start="$start" -v end="$end" -v motif="$motif" \
 				'{if ($6 == "+") print $1, $2+start, $2+end, $4, $5, $6; else print $1, $3-end, $3-start, $4, $5, $6}' \
-				> "$PositiveStrandGenes" &
+				> "$StrandGenes" &
 wait
 
 #	Generate the FASTA Sequences we're interested in, flipping negative
@@ -141,8 +140,8 @@ wait
 #	genes to have the "wrong" order, so we shouldn't use this file for
 #	correlating with bedfiles
 echo "[LOG] Extracting FASTA Sequences from ""$file"
-bedtools getfasta -name -tab -s -bed "$PositiveStrandGenes"	\
-				 -fi	"$fasta" -fo "$PositiveSequences"	&
+bedtools getfasta -name -tab -s -bed "$StrandGenes"	\
+				 -fi	"$fasta" -fo "$Sequences"	&
 wait
 # TODO - Check this...
 # bedtools getfasta -bed "$NegativeStrandGenes"	-fi	"$fasta" -name -tab \
@@ -156,7 +155,7 @@ sub () {
 motifpattern="$(echo "$motif" | sub)"
 
 echo "[LOG] Filtering FASTA Sequences matching ""$motifpattern" &
-grep -i	"$motifpattern" "$PositiveSequences" > "$MatchedSequencesPos" &
+grep -i	"$motifpattern" "$Sequences" > "$MatchedSequences" &
 wait
 
-cat	"$MatchedSequencesPos" > "$OutFile"
+cat	"$MatchedSequences" > "$OutFile"
