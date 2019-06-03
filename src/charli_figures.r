@@ -2,6 +2,7 @@ suppressMessages(library("tidyverse"))
 library(ggthemes)
 library(ggsci)
 
+setwd('/scratch/Users/zama8258/pause_output')
 ## Genesets we're interested in
 wellexpr <- read_delim("expressed_genes_filtertable.txt", col_names=c("name", 'tx_name'), delim="\t")
 inr <- read_delim("hg38_matched_genes_BBCABW.data", col_names=c("name", 'sequence'), delim="\t")
@@ -70,16 +71,16 @@ plt <- function(frame, prefix) {
              title= "Change in Pausing Index") +
         scale_x_log10() + scale_y_log10()
     ggsave(
-        str_c(prefix, "_scatter.png"),
-        plot = last_plot(), device = "png")
+        str_c(prefix, "_scatter.pdf"),
+        plot = last_plot(), device = "pdf")
 
     ## Calculate Significance
     k <- ks.test(frame$p_pause_mean, frame$c_pause_mean)
     p <- k$p.value
     annotation <- paste0(prefix, ": p = ", p)
     print(annotation)
-    writelines(annotation)
-    
+    write(annotation, file = str_c(prefix, "_pvalue.txt"))
+
     ## 301 ecdf
     ggplot(data = frame) +
         stat_ecdf(aes(p_pause_mean, color='Control')) + stat_ecdf(aes(c_pause_mean, color='Treatment')) +
@@ -92,8 +93,8 @@ plt <- function(frame, prefix) {
              title= "Cumulative Distribution") +
         scale_x_log10()
     ggsave(
-        str_c(prefix, "_ecdf.png"),
-        plot = last_plot(), device = "png")
+        str_c(prefix, "_ecdf.pdf"),
+        plot = last_plot(), device = "pdf")
 
     ## MA-ish plot
     ggplot(data = frame, mapping=aes(x=coverage_mean, y=pause_diff), alpha=1/10) +
@@ -106,8 +107,8 @@ plt <- function(frame, prefix) {
         scale_x_log10() +
         ## scale_y_log10()
         ggsave(
-            str_c(prefix, "_MA.png"),
-            plot = last_plot(), device = "png")
+            str_c(prefix, "_MA.pdf"),
+            plot = last_plot(), device = "pdf")
 }
 
 ## Full gene sets

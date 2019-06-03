@@ -55,6 +55,7 @@ plt <- function(frame, prefix) {
     p <- k$p.value
     annotation <- paste0("p = ", p)
     print(annotation)
+    write(annotation, file = str_c(prefix, "_pvalue.txt"))
     
     ## 301 ecdf
     ggplot(data = frame) +
@@ -93,6 +94,12 @@ xfer <- read_delim("drosophila_refseq_to_common_id.txt", delim=" ",
 paused_genes <- read_delim("genelist-paused.txt", delim="\t")
 prox_genes <- read_delim("genelist-Prox.txt", delim="\t")
 dist_genes <- read_delim("genelist-Dist.txt", delim="\t")
+gaga_genes <- read_delim("genome_matched_genes_NVNVMGNRMR.data", delim="\t",
+                         col_names = c("name", "seq"))
+inr_genes <- read_delim("genome_matched_genes_BBCABW.data", delim="\t",
+                        col_names = c("name", "seq"))
+tata_genes <- read_delim("genome_matched_genes_WWWW.data", delim="\t",
+                         col_names = c("name", "seq"))
 
 paused_ddt <- left_join(ddt_301, xfer) %>%
     left_join(paused_genes) %>%
@@ -103,7 +110,20 @@ prox_ddt <- left_join(ddt_301, xfer) %>%
 dist_ddt <- left_join(ddt_301, xfer) %>%
     left_join(dist_genes) %>%
     na.omit(cols = c(genename))
+gaga_ddt <- left_join(ddt_301, xfer) %>%
+    left_join(gaga_genes) %>%
+    na.omit(cols = c(genename))
+inr_ddt <- left_join(ddt_301, xfer) %>%
+    left_join(inr_genes) %>%
+    na.omit(cols = c(genename))
+tata_ddt <- left_join(ddt_301, xfer) %>%
+    left_join(tata_genes) %>%
+    na.omit(cols = c(genename))
 
 plt(paused_ddt, "paused")
 plt(prox_ddt, "proximal")
 plt(dist_ddt, "distal")
+
+plt(gaga_ddt, "gaga")
+plt(inr_ddt, "inr")
+plt(tata_ddt, "tata")

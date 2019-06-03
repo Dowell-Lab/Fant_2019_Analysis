@@ -38,10 +38,10 @@ topGenes="$scratch"/topGenes.bed
 bottomGenes="$scratch"/bottomGenes.bed
 middleGenes="$scratch"/middleGenes.bed
 
-shortGenes="$scratch"/shortGenes.bed
-mediumGenes="$scratch"/mediumGenes.bed
-mediumLongGenes="$scratch"/mediumLongGenes.bed
-longGenes="$scratch"/longGenes.bed
+quartile1Genes="$scratch"/quartile1Genes.bed
+quartile2Genes="$scratch"/quartile2Genes.bed
+quartile3Genes="$scratch"/quartile3Genes.bed
+quartile4Genes="$scratch"/quartile4Genes.bed
 
 lendiff="$scratch"/lendiff
 
@@ -81,14 +81,25 @@ head -n-"$topAndBottomThreshold" "$sorted" | \
 wait
 
 # Then, generate tables for different length genes
-awk -v OFS='\t' '{if ($3 - $2 < 10000) print $0}' "$filtered" | \
-		sort -k1,1 -k2,2 | cut -f1-6 | bedtools sort > "$shortGenes"
-awk -v OFS='\t' '{if ($3 - $2 > 10000 &&  $3 - $2 < 25000) print $0}' "$filtered" | \
-		sort -k1,1 -k2,2 | cut -f1-6 | bedtools sort > "$mediumGenes"
-awk -v OFS='\t' '{if ($3 - $2 > 25000 &&  $3 - $2 < 65000) print $0}' "$filtered" | \
-		sort -k1,1 -k2,2 | cut -f1-6 | bedtools sort > "$mediumLongGenes"
-awk -v OFS='\t' '{if ($3 - $2 > 65000) print $0}' "$filtered" | \
-		sort -k1,1 -k2,2 | cut -f1-6 | bedtools sort > "$longGenes"
+# awk -v OFS='\t' '{if ($3 - $2 < 10000) print $0}' "$filtered" | \
+		# 		sort -k1,1 -k2,2 | cut -f1-6 | bedtools sort > "$shortGenes"
+# awk -v OFS='\t' '{if ($3 - $2 > 10000 &&  $3 - $2 < 25000) print $0}' "$filtered" | \
+		# 		sort -k1,1 -k2,2 | cut -f1-6 | bedtools sort > "$mediumGenes"
+# awk -v OFS='\t' '{if ($3 - $2 > 25000 &&  $3 - $2 < 65000) print $0}' "$filtered" | \
+		# 		sort -k1,1 -k2,2 | cut -f1-6 | bedtools sort > "$mediumLongGenes"
+# awk -v OFS='\t' '{if ($3 - $2 > 65000) print $0}' "$filtered" | \
+		# 		sort -k1,1 -k2,2 | cut -f1-6 | bedtools sort > "$longGenes"
+
+pushd "$scratch"
+
+split -n l/4 -d "$sorted" quartile_
+sort -k1,1 -k2,2 quartile_00 | cut -f1-6 > "$quartile1Genes" &
+sort -k1,1 -k2,2 quartile_01 | cut -f1-6 > "$quartile2Genes" &
+sort -k1,1 -k2,2 quartile_02 | cut -f1-6 > "$quartile3Genes" &
+sort -k1,1 -k2,2 quartile_03 | cut -f1-6 > "$quartile4Genes" &
+wait
+
+popd
 
 echo "Done"
 #

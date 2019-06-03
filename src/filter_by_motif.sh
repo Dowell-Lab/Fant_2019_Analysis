@@ -78,7 +78,7 @@ DirPrefix=/scratch/Users/zama8258
 #InterestFile=/scratch/Shares/public/nascentdb/processedv2.0/bedgraphs/$file.tri.BedGraph
 # Infile=$DirPrefix/NCBI_RefSeq_UCSC_RefSeq_hg38.bed
 InterestFile=$file
-name=hg38
+name=$(basename "$fasta" .fa)
 OutFile=$DirPrefix/pause_output/"$name"_matched_genes_$motif.data
 
 #	During debugging, we write out all output to disk so that we can
@@ -126,8 +126,8 @@ fi
 ################################################################################
 ################################################################################
 
-# TODO - I think we can get away with just a single command with the -s flag
-#	Find the regions we want to	search on both strands
+#	Find the regions we want to	search on both strands.
+# FIXME - Generalize for non-human genomes...
 echo "[LOG] Prefiltering ""$file"
 grep -e "^chr[0-9\\|X\\|Y]*\\s" "$InterestFile" | \
 		awk -v OFS='\t' -v start="$start" -v end="$end" -v motif="$motif" \

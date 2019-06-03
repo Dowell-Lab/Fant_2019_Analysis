@@ -27,7 +27,7 @@ counts <- read_delim("counts_full.txt_without_header", delim = "\t") %>%
 
 batch <- c("Day 1", "Day 2", "Day 3", "Day 1", "Day 2", "Day 3")
 fx <- removeBatchEffect(counts, batch)
-## fx <- ComBat(as.matrix(counts), batch)
+## ## fx <- ComBat(as.matrix(counts), batch)
 counts_t <- data.frame(t(fx))
 counts_t_filt <- counts_t[, which(apply(counts_t, 2, var) != 0)]
 
@@ -48,9 +48,8 @@ ggplot() +
     labs(x = "PC1", y = "PC2", title = "Principal Component Analysis of Samples",
          color = "Group") +
     guides(colour = guide_legend(override.aes = list(size = 10)), size = FALSE) +
-    ggsave("/home/zach/dowell_lab/pausing_meta_analysis/out/drosophila/pca/pca_fullgene_bigpoints.png",
+    ggsave("/home/zach/dowell_lab/pausing_meta_analysis/out/drosophila/pca/pca_fullgene_bigpoints.pdf",
            plot = last_plot(),
-           device = "png",
            height = 5,
            width = 10)
 

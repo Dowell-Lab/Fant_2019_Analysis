@@ -8,6 +8,10 @@
 library("tidyverse")
 library("DESeq2")
 
+## Change this for different experiments...
+setwd('/home/zach/dowell_lab/pausing_meta_analysis/out/counts')
+num_reps <- 2
+
 ## Set up a function for plotting
 makefig <- function(deseqdata, fileprefix) {
     res <- DESeq2::results(deseqdata)
@@ -46,7 +50,7 @@ makefig <- function(deseqdata, fileprefix) {
 idConvert <- read_delim("refseq_to_common_id.txt",
                         col_names = c("rowname", "common"), delim = " ")
 ## Experimental condition
-condition <- factor(c(rep("treated", 3), rep("untreated", 3)), levels=c("untreated", "treated"))
+condition <- factor(c(rep("treated", num_reps), rep("untreated", num_reps)), levels=c("untreated", "treated"))
 
 #################################################
 ## Initial Processing for Correct Size Factors ##

@@ -66,12 +66,10 @@ ggplot() +
     geom_point(data = pcap, mapping = aes(x = PC1, y = PC2, color = group, size = 6)) +
     labs(x = "PC1", y = "PC2", title = "Principal Component Analysis of Samples", color = "Condition") +
     guides(size = FALSE) +
-ggsave(str_c("/home/zach/dowell_lab/pausing_meta_analysis/out/prepublish/pca/pca_fullgene_bigpoints.png"),
-       plot = last_plot(),
-       device = "png",
+    ggsave(str_c("/home/zach/dowell_lab/pausing_meta_analysis/out/prepublish/pca/pca_fullgene_bigpoints.pdf"),
+           plot = last_plot(),
        height = 5,
        width = 10)
-md5sum("/home/zach/dowell_lab/pausing_meta_analysis/out/prepublish/pca/pca_fullgene_compare.png")
 
 ######################################################################
 ### run_pca_r.r ends here

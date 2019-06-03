@@ -10,27 +10,27 @@ topGenes="$fileDir"/topGenes.bed
 middleGenes="$fileDir"/middleGenes.bed
 bottomGenes="$fileDir"/bottomGenes.bed
 
-topOut="$outDir"/metagene_top.png
-middleOut="$outDir"/metagene_middle.png
-bottomOut="$outDir"/metagene_bottom.png
+topOut="$outDir"/metagene_top.pdf
+middleOut="$outDir"/metagene_middle.pdf
+bottomOut="$outDir"/metagene_bottom.pdf
 
-# shortGenes="$fileDir"/shortGenes.bed
-# mediumGenes="$fileDir"/mediumGenes.bed
-# mediumLongGenes="$fileDir"/mediumLongGenes.bed
-# longGenes="$fileDir"/longGenes.bed
+quartile1Genes="$fileDir"/quartile1Genes.bed
+quartile2Genes="$fileDir"/quartile2Genes.bed
+quartile3Genes="$fileDir"/quartile3Genes.bed
+quartile4Genes="$fileDir"/quartile4Genes.bed
 
-# shortOut="$outDir"/metagene_shortGenes.png
-# mediumOut="$outDir"/metagene_mediumGenes.png
-# mediumLongOut="$outDir"/metagene_mediumLongGenes.png
-# longOut="$outDir"/metagene_longGenes.png
+quartile1Out="$outDir"/metagene_quartile1Genes.pdf
+quartile2Out="$outDir"/metagene_quartile2Genes.pdf
+quartile3Out="$outDir"/metagene_quartile3Genes.pdf
+quartile4Out="$outDir"/metagene_quartile4Genes.pdf
 
 sbatch metagene_custom.bash --regions="$topGenes" --outfile="$topOut"
 sbatch metagene_custom.bash --regions="$middleGenes" --outfile="$middleOut"
 sbatch metagene_custom.bash --regions="$bottomGenes" --outfile="$bottomOut"
 
-# sbatch metagene_custom.bash --regions="$shortGenes" --outfile="$shortOut"
-# sbatch metagene_custom.bash --regions="$mediumGenes" --outfile="$mediumOut"
-# sbatch metagene_custom.bash --regions="$mediumLongGenes" --outfile="$mediumLongOut"
-# sbatch metagene_custom.bash --regions="$longGenes" --outfile="$longOut"
+sbatch metagene_custom.bash --regions="$quartile1Genes" --outfile="$quartile1Out"
+sbatch metagene_custom.bash --regions="$quartile2Genes" --outfile="$quartile2Out"
+sbatch metagene_custom.bash --regions="$quartile3Genes" --outfile="$quartile3Out"
+sbatch metagene_custom.bash --regions="$quartile4Genes" --outfile="$quartile4Out"
 
 echo "Submitted all Jobs Successfully"

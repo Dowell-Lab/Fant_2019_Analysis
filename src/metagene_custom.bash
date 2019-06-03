@@ -54,7 +54,7 @@ logr "Parsed Params: ""$regionFile"", ""$imgOut"
 
 logr "Starting Analysis"
 srcDir=/scratch/Users/zama8258/pause_analysis_src
-numRegions=1000
+numRegions=100
 tmpdir=$(mktemp -d)
 # tmpdir=/scratch/Users/zama8258/processed_nascent/metagene/
 
