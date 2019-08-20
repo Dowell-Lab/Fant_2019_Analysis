@@ -2,18 +2,38 @@
 
 ## Processing of Sequencing Data
 
-Sequencing data was initially in the form of raw fastq files. Prior to analysis, the data were analyzed using FastQC (CITE) to determine the quality of the data prior to trimming. Trimming of the data was performed using BBDuk (CITE), keeping reads with a minimum length of 25bp, a kmer length of 23, referenced against a standard collection of adapters for bbmap (CITE). FastQC was used to check the quality after trimming.
+The initial processing of all sequencing data was performed using the NascentFlow Pipeline, a data processing pipeline written in the Groovy programming language. The code for this pipeline can be found at https://github.com/Dowell-Lab/Nascent-Flow, with analysis for this experiment performed at commit 3fe1b7. Data were mapped to the hg38 reference genome for human cells, and to the dm6 reference genome for Drosophila cells.
 
-The trimmed fastq data was then mapped to the hg38 reference sequence using hisat2 (CITE), and these mapped data were sorted and converted to BAM format using samtools (CITE).
 
-After mapping was completed, the mapped data was converted to the Bedgraph format using deeptools (CITE) for normalized bedgraph files and bedtools (CITE) for non-normalized and 5' bedgraph files.
+## Isoform Resolution
+
+For the remainder of the analysis, only the maximally expressed isoform of each gene was considered. The maximally expressed isoform was determined by calculating the RPKM normalized expression over each isoform and selecting the one with the maximum RPKM expression.
 
 ## Pause Index Analysis
 
-Initial analysis of the processed data focused on calculating the pause index based on NCBI RefSeq gene annotations. A fixed-window approach was used, taking the region from -50 to +200 base pairs around the annotated transcription start site (TSS) as the 'paused region' and taking the region from +1kb to the annotated polyA site as the 'gene region'. Pause index was calculated as the ratio of normalized reads in the 'paused region' to normalized reads in the 'gene region'.
+Pause indices were calculated using a fixed-window approach. The region from -30 to +300 base pairs around the annotated transcription start site (TSS) was defined as the 'paused region', and the region from +301kb to the annotated polyA site was defined as the elongation region. Pause index was calculated as the ratio of length-normalized reads in the 'paused region' to length-normalized reads in the 'gene region'. Subsets of genes containing promoter elements were found by searching across the reference sequence of each gene, looking for  promoter elements in their expected positions relative to the TSS. The following motifs were used for each promoter element:
+  - TATA-like: WWWW
+  - Initiator: BBCABW
+  - Motif Ten Element: CGANC....CGG
+  - Downstream Promoter Element: RGWYVT
+  - GAGA Element: NVNVMGNRMR (from Figure 3A in Tsai, 2016, Epigenetics/Chromatin)
 
-Analysis of these results revealed that naive use of RefSeq annotations had a variety of issues. Most significantly, using these annotations meant that no resolution of actively coding gene isoforms could be determined, and that the annotated TSS frequently did not line up with the true TSS observed in gene browser traces.
+## Metagene Analysis
 
-These two issues (which appear to exist in any analysis naively using RefSeq annotations), meant that further analysis (like differential expression analysis) could not be performed without an effective method to determine the true TSS.
+Each gene in the isoform-resolved reference sequence was divided into a fixed number of bins, and the utility featurecounts (CITE) was used to determine the total counts in those regions. The mean count and standard deviation of that mean were calculated, and all bins were then plotted along with that standard deviation.
 
-An alternative method for determining the true TSS was constructed using two existing algorithms -- FStitch (CITE) and TFit (CITE). The FStitch model was manually trained on the processed data to determine the regions in the genome most likely to be actively transcribed genes. Training was performed using a set of 66 annotated regions of the genome.
+## Principal Component Analysis
+
+Principal component analysis was performed using the standard `prcomp` function provided by the `sva` package for the R programming language. Batch effects from the different days replicates were generated on were corrected using the `removeBatchEffect` function provided by the `limma` package from the R programming language.
+
+## Differential Expression Analysis
+
+Differential expression analysis was performed using the `DESeq2` package for the R programming language. Counts were generated using the utility featurecounts. Initial analysis using counts across the full annotated gene showed significant skew indicating that the baseline assumptions of the differential expression model did not hold. To correct this, counts in the region from +500 of the TSS to -500 from the TES were used to obtain suitable model weights. Those model weights were then used when performing differential expression across the full gene, which corrected the observed skew.
+
+## Gene Set Enrichment Analysis
+
+Gene set enrichment analysis (GSEA) was performed with the Broad
+Institute’s GSEA software on the GenePattern Server using the pre-ranked
+module. Log₂ fold-change values were used as the rank metric for all
+genes and compared against the Hallmark gene sets database for
+enrichment.

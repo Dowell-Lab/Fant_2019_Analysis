@@ -38,8 +38,9 @@ outfile <- args$outfile
 countsSense <- read_delim(sense, delim="\t")
 countsAntiSense <- read_delim(antisense, delim="\t")
 
-## countsSense <- read_delim('metagene_counts_sense_fix.txt', delim="\t")
-## countsAntiSense <- read_delim('metagene_counts_antisense_fix.txt', delim="\t")
+setwd("/home/zach/dowell_lab/pausing_meta_analysis/data")
+countsSense <- read_delim('metagene_counts_sense_fix.txt', delim="\t")
+countsAntiSense <- read_delim('metagene_counts_antisense_fix.txt', delim="\t")
 
 df_sense <- countsSense %>% separate(Geneid, into = c("geneid", "coord"), sep="/")
 df_sense$coord = as.numeric(df_sense$coord)

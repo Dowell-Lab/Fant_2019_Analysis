@@ -26,13 +26,13 @@ makefig <- function(deseqdata, fileprefix) {
     ## Write results
     write.csv(resdata, file = paste0(fileprefix, "-diffexpr-results.csv"))
 
-    ptsize <- 40 * 1.0
+    ptsize <- 40 * 1.5
 
-    ## png(paste0(fileprefix, "-diffexpr-hist.png"), 1500, 1000, pointsize = ptsize)
-    ## hist(res$pvalue, breaks = 50, col = "grey")
-    ## dev.off()
+    png(paste0(fileprefix, "-diffexpr-hist.png"), 1500, 1000, pointsize = ptsize)
+    hist(res$pvalue, breaks = 50, col = "grey")
+    dev.off()
 
-    ## png('MA_plot.png') plotMA(res) dev.off()
+    png('MA_plot.png') plotMA(res) dev.off()
 
     png(paste0(fileprefix, "-diffexpr-maplot.png"), 3000, 2000, pointsize = ptsize)
     DESeq2::plotMA(res, main = "MA Plot")

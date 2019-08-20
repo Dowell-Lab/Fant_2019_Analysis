@@ -2,7 +2,7 @@ suppressMessages(library("tidyverse"))
 library(ggthemes)
 library(ggsci)
 
-setwd('/scratch/Users/zama8258/pause_output')
+setwd('/scratch/Users/zama8258/pause_output/testing')
 ## Genesets we're interested in
 wellexpr <- read_delim("expressed_genes_filtertable.txt", col_names=c("name", 'tx_name'), delim="\t")
 inr <- read_delim("hg38_matched_genes_BBCABW.data", col_names=c("name", 'sequence'), delim="\t")
@@ -11,16 +11,16 @@ dpe <- read_delim("hg38_matched_genes_RGWYVT.data", col_names=c("name", 'sequenc
 tata <- read_delim("hg38_matched_genes_WWWW.data", col_names=c("name", 'sequence'), delim="\t")
 
 ## Filter and subset data
-c_1_301 <- read_delim("C413_1_S3_R1_001.trim.rpkm.bedGraph_pause_ratios_301.data",
-                     col_names=c('tx_name', 'strand', 'c_1_301', 'coverage_c1_301'), delim=" ") %>%
+c_1_301 <- read_delim("C413_1_S3_R1_001.trim.bedGraph_pause_ratios_TEST.data",
+                      col_names=c('tx_name', 'strand', 'c_1_301', 'coverage_c1_301'), delim=" ") %>%
     subset(select=-strand)
-c_2_301 <- read_delim("C413_2_S4_R1_001.trim.rpkm.bedGraph_pause_ratios_301.data",
+c_2_301 <- read_delim("C413_2_S4_R1_001.trim.bedGraph_pause_ratios_TEST.data",
                       col_names=c('tx_name', 'strand', 'c_2_301', 'coverage_c2_301'), delim=" ") %>%
     subset(select=-strand)
-p_1_301 <- read_delim("PO_1_S1_R1_001.trim.rpkm.bedGraph_pause_ratios_301.data",
+p_1_301 <- read_delim("PO_1_S1_R1_001.trim.bedGraph_pause_ratios_TEST.data",
                       col_names=c('tx_name', 'strand', 'p_1_301', 'coverage_p1_301'), delim=" ") %>%
     subset(select=-strand)
-p_2_301 <- read_delim("PO_2_S2_R1_001.trim.rpkm.bedGraph_pause_ratios_301.data",
+p_2_301 <- read_delim("PO_2_S2_R1_001.trim.bedGraph_pause_ratios_TEST.data",
                       col_names=c('tx_name', 'strand', 'p_2_301', 'coverage_p2_301'), delim=" ") %>%
     subset(select=-strand)
 

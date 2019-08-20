@@ -84,7 +84,7 @@ PosStrandFinalSorted="$ScratchDir"/"$RootName".pos.maxiso
 NegStrandFinalSorted="$ScratchDir"/"$RootName".neg.maxiso
 
 StrandsMerged="$ScratchDir"/"$RootName".merge.maxiso
-FPKMCommonID="$ScriptDir"/"$RootName".merge.maxiso.common
+FPKMCommonID="$ScratchDir"/"$RootName".merge.maxiso.common
 FinalOut="$OutDir"/"$RootName".isoform_max.bed
 
 # Clean up temp files on exit
