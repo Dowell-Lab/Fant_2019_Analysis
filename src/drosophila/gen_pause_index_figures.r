@@ -100,6 +100,13 @@ inr_genes <- read_delim("genome_matched_genes_BBCABW.data", delim="\t",
                         col_names = c("name", "seq"))
 tata_genes <- read_delim("genome_matched_genes_WWWW.data", delim="\t",
                          col_names = c("name", "seq"))
+mte_genes <- read_delim("genome_matched_genes_CGANC....CGG.data", delim="\t",
+                        col_names = c("name", "seq"))
+dpe_genes <- read_delim("genome_matched_genes_RGWYVT.data", delim="\t",
+                        col_names = c("name", "seq"))
+pb_genes <- read_delim("genome_matched_genes_KCGRWCG.data", delim="\t",
+                       col_names = c("name", "seq"))
+
 
 paused_ddt <- left_join(ddt_301, xfer) %>%
     left_join(paused_genes) %>%
@@ -119,6 +126,15 @@ inr_ddt <- left_join(ddt_301, xfer) %>%
 tata_ddt <- left_join(ddt_301, xfer) %>%
     left_join(tata_genes) %>%
     na.omit(cols = c(genename))
+mte_ddt <- left_join(ddt_301, xfer) %>%
+    left_join(mte_genes) %>%
+    na.omit(cols = c(genename))
+dpe_ddt <- left_join(ddt_301, xfer) %>%
+    left_join(dpe_genes) %>%
+    na.omit(cols = c(genename))
+pb_ddt <- left_join(ddt_301, xfer) %>%
+    left_join(pb_genes) %>%
+    na.omit(cols = c(genename))
 
 plt(paused_ddt, "paused")
 plt(prox_ddt, "proximal")
@@ -127,3 +143,6 @@ plt(dist_ddt, "distal")
 plt(gaga_ddt, "gaga")
 plt(inr_ddt, "inr")
 plt(tata_ddt, "tata")
+plt(mte_ddt, "mte")
+plt(dpe_ddt, "dpe")
+plt(pb_ddt, "pb")

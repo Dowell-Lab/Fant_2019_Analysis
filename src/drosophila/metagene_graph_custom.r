@@ -38,8 +38,11 @@ outfile <- args$outfile
 countsSense <- read_delim(sense, delim="\t")
 countsAntiSense <- read_delim(antisense, delim="\t")
 
-## countsSense <- read_delim('metagene_counts_sense_fix.txt', delim="\t")
-## countsAntiSense <- read_delim('metagene_counts_antisense_fix.txt', delim="\t")
+setwd('/home/zach/dowell_lab/pausing_meta_analysis/out/counts/drosophila')
+countsSense <- read_delim('metagene_counts_sense_fix.txt', delim="\t")
+countsAntiSense <- read_delim('metagene_counts_antisense_fix.txt', delim="\t")
+outfile <- '/home/zach/dowell_lab/pausing_meta_analysis/out/counts/drosophila/testing.pdf'
+num_bins <- 25
 
 df_sense <- countsSense %>% separate(Geneid, into = c("geneid", "coord"), sep="/")
 df_sense$coord = as.numeric(df_sense$coord)
@@ -75,6 +78,22 @@ df_sense$Taf_2_S5_R1_001.sorted.bam <-
 df_sense$Taf_3_S6_R1_001.sorted.bam <-
     tpm_normalize(df_sense, df_antisense, "Taf_3_S6_R1_001.sorted.bam")
 
+##  FIX TYPO
+## upregulated <- df_sense %>%
+##     group_by(geneid) %>%
+##     summarise(c1 = sum(Control_1_S1_R1_001.sorted.bam),
+##               c2 = sum(Control_2_S2_R1_001.sorted.bam),
+##               c3 = sum(Control_3_S3_R1_001.sorted.bam),
+##               p1 = sum(Taf_1_S4_R1_001.sorted.bam),
+##               p2 = sum(Taf_2_S5_R1_001.sorted.bam),
+##               p3 = sum(Taf_3_S6_R1_001.sorted.bam)) %>%
+##     mutate(cmean = rowMeans(select(., c1, c2, c3)),
+##            pmean = rowMeans(select(., p1, p2, p3))) %>%
+##     mutate(expressionchange = pmean - cmean) %>%
+##     subset(select = -c(c1, c2, c3, p1, p2, p3, cmean, pmean)) %>%
+##     filter(expressionchange > 0)
+## df_sense <- left_join(upregulated, df_sense)
+
 ## Repeat for Antisense
 df_antisense$Control_1_S1_R1_001.sorted.bam <-
     tpm_normalize(df_antisense, df_sense, "Control_1_S1_R1_001.sorted.bam")
@@ -91,13 +110,13 @@ df_antisense$Taf_3_S6_R1_001.sorted.bam <-
 
 ## Transform data by calculating the max, min, and mean for each row
 df_sense <- df_sense %>%
-    mutate(treat_mu = rowMeans(select(.,
-                                      Control_1_S1_R1_001.sorted.bam,
+    mutate(control_mu = rowMeans(select(.,
+                                        Control_1_S1_R1_001.sorted.bam,
                                       Control_2_S2_R1_001.sorted.bam,
                                       Control_3_S3_R1_001.sorted.bam)))
 df_sense <- df_sense %>%
-    mutate(control_mu = rowMeans(select(.,
-                                        Taf_1_S4_R1_001.sorted.bam,
+    mutate(treat_mu = rowMeans(select(.,
+                                      Taf_1_S4_R1_001.sorted.bam,
                                         Taf_2_S5_R1_001.sorted.bam,
                                         Taf_3_S6_R1_001.sorted.bam)))
 df_sense <- df_sense %>% subset(select = -c(geneid, Chr, Start, End, Length,
@@ -121,13 +140,13 @@ final_sense <- df_sense %>% group_by(coord) %>%
 
 
 df_antisense <- df_antisense %>%
-    mutate(treat_mu = rowMeans(select(.,
-                                      Control_1_S1_R1_001.sorted.bam,
+    mutate(control_mu = rowMeans(select(.,
+                                        Control_1_S1_R1_001.sorted.bam,
                                       Control_2_S2_R1_001.sorted.bam,
                                       Control_3_S3_R1_001.sorted.bam)))
 df_antisense <- df_antisense %>%
-    mutate(control_mu = rowMeans(select(.,
-                                        Taf_1_S4_R1_001.sorted.bam,
+    mutate(treat_mu = rowMeans(select(.,
+                                      Taf_1_S4_R1_001.sorted.bam,
                                         Taf_2_S5_R1_001.sorted.bam,
                                         Taf_3_S6_R1_001.sorted.bam)))
 df_antisense <- df_antisense %>% subset(select = -c(geneid, Chr, Start, End, Length,
@@ -190,55 +209,54 @@ ggplot() + theme_tufte() +
     geom_hline(yintercept = 0, color = "black", size = 0.125) +
     labs(title = "Metagene Plot", color = "Condition", fill = "Std. Dev. Mean") +
     xlab("Bins") + ylab("Normalized Read Depth")
-## ggsave("img.png", width = 10, height = 5)
 
 ggsave(outfile, width = 10, height = 5)
 
-## Filter data for inset
-inset_sense <- final_sense %>% filter(coord > 40) %>% filter(coord < 80)
-inset_antisense <- final_antisense %>% filter(coord > 40) %>% filter(coord < 80)
+## ## Filter data for inset
+## inset_sense <- final_sense %>% filter(coord > 40) %>% filter(coord < 80)
+## inset_antisense <- final_antisense %>% filter(coord > 40) %>% filter(coord < 80)
 
-## Inset Plot
-ggplot() + theme_tufte() +
-    scale_color_manual(values=c('Control'='#00BFC4', 'Knockdown'='#F8766D')) +
-    scale_fill_manual(values=c('Control'='#00BFC4', 'Knockdown'='#F8766D')) +
-    ## Sense Knockdown
-    geom_line(data = inset_sense, aes(x = coord,
-                                      y = mean_treat_mu,
-                                      color = 'Knockdown'), size = 0.25) +
-    geom_ribbon(data = inset_sense, aes(x = coord,
-                                        ymin = mean_treat_min,
-                                        ymax = mean_treat_max,
-                                        fill = 'Knockdown'), size = 0.25, alpha = 0.2) +
-    ## Sense Control
-    geom_line(data = inset_sense, aes(x = coord,
-                                      y = mean_control_mu,
-                                      color = 'Control'), size = 0.25) +
-    geom_ribbon(data = inset_sense, aes(x = coord,
-                                        ymin = mean_control_min,
-                                        ymax = mean_control_max,
-                                        fill = 'Control'), size=0.25, alpha = 0.2) +
-    ## Antisense Knockdown
-    geom_line(data = inset_antisense, aes(x = coord,
-                                          y = mean_treat_mu,
-                                          color = 'Knockdown'), size=0.25) +
-    geom_ribbon(data = inset_antisense, aes(x = coord,
-                                            ymin = mean_treat_min,
-                                            ymax = mean_treat_max,
-                                            fill = 'Knockdown'), size = 0.25, alpha = 0.2) +
-    ## Antisense Control
-    geom_line(data = inset_antisense, aes(x = coord,
-                                          y = mean_control_mu,
-                                          color = 'Control'), size=0.25) +
-    geom_ribbon(data = inset_antisense, aes(x = coord,
-                                            ymin = mean_control_min,
-                                            ymax = mean_control_max,
-                                            fill = 'Control'), size=0.25, alpha = 0.2) +
-    geom_hline(yintercept = 0, color = "black", size = 0.125) +
-    labs(title = "Metagene Plot", color = "Condition", fill = "Std. Dev. Mean") +
-    xlab("Bins") + ylab("Normalized Read Depth")
+## ## Inset Plot
+## ggplot() + theme_tufte() +
+##     scale_color_manual(values=c('Control'='#00BFC4', 'Knockdown'='#F8766D')) +
+##     scale_fill_manual(values=c('Control'='#00BFC4', 'Knockdown'='#F8766D')) +
+##     ## Sense Knockdown
+##     geom_line(data = inset_sense, aes(x = coord,
+##                                       y = mean_treat_mu,
+##                                       color = 'Knockdown'), size = 0.25) +
+##     geom_ribbon(data = inset_sense, aes(x = coord,
+##                                         ymin = mean_treat_min,
+##                                         ymax = mean_treat_max,
+##                                         fill = 'Knockdown'), size = 0.25, alpha = 0.2) +
+##     ## Sense Control
+##     geom_line(data = inset_sense, aes(x = coord,
+##                                       y = mean_control_mu,
+##                                       color = 'Control'), size = 0.25) +
+##     geom_ribbon(data = inset_sense, aes(x = coord,
+##                                         ymin = mean_control_min,
+##                                         ymax = mean_control_max,
+##                                         fill = 'Control'), size=0.25, alpha = 0.2) +
+##     ## Antisense Knockdown
+##     geom_line(data = inset_antisense, aes(x = coord,
+##                                           y = mean_treat_mu,
+##                                           color = 'Knockdown'), size=0.25) +
+##     geom_ribbon(data = inset_antisense, aes(x = coord,
+##                                             ymin = mean_treat_min,
+##                                             ymax = mean_treat_max,
+##                                             fill = 'Knockdown'), size = 0.25, alpha = 0.2) +
+##     ## Antisense Control
+##     geom_line(data = inset_antisense, aes(x = coord,
+##                                           y = mean_control_mu,
+##                                           color = 'Control'), size=0.25) +
+##     geom_ribbon(data = inset_antisense, aes(x = coord,
+##                                             ymin = mean_control_min,
+##                                             ymax = mean_control_max,
+##                                             fill = 'Control'), size=0.25, alpha = 0.2) +
+##     geom_hline(yintercept = 0, color = "black", size = 0.125) +
+##     labs(title = "Metagene Plot", color = "Condition", fill = "Std. Dev. Mean") +
+##     xlab("Bins") + ylab("Normalized Read Depth")
 
-ggsave(paste0(outfile, "_inset.pdf"), width = 10, height = 5)
+## ggsave(paste0(outfile, "_inset.pdf"), width = 10, height = 5)
 
 ######################################################################
 ### metagene_graph_custom.r ends here

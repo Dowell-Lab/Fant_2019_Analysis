@@ -56,7 +56,7 @@ logr "Starting Analysis"
 srcDir=/scratch/Users/zama8258/pause_analysis_src
 numRegions=25
 tmpdir=$(mktemp -d)
-# tmpdir=/scratch/Users/zama8258/taf1_drosophila_pro_seq/output/metaplot_proxdist
+# tmpdir=/scratch/Users/zama8258/taf1_drosophila_pro_seq/output/metagene
 
 NUM_CORES=8
 safFile="$tmpdir"/region_split.saf
