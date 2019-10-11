@@ -36,7 +36,7 @@ fi
 # This is the file we're interested in analyzing
 # InterestFile=$0 ## TODO	argument parsing
 #InterestFile=/scratch/Shares/public/nascentdb/processedv2.0/bedgraphs/$srr.tri.BedGraph
-RefSeq=/scratch/Shares/dowell/nascent/dm6/dm6_refeq.bed
+RefSeq=/scratch/Shares/dowell/genomes/dm6/dm6_refseq.bed
 
 ## This determines the directory that we are executing the current
 ## script from, so we can call other scripts in the	same directory.

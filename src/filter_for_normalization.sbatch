@@ -38,6 +38,7 @@ EOF
 
 
 # Generate featurecounts
+mkdir -p "$baseDir"/counts/
 outFile="$baseDir"/counts/counts_long_ends.txt
 safFile="$baseDir"/counts/full.saf
 Infile="$outBed"

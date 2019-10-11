@@ -93,4 +93,4 @@ sort -u -k1,1 -k2,2n > $OutFile.sort.bedGraph
 echo "Generating TDF"
 /opt/igvtools/2.3.75/igvtools toTDF $OutFile.sort.bedGraph \
 															$OutFile.tdf \
-		/scratch/Shares/dowell/nascent/hg38.chrom.sizes
+		/scratch/Shares/dowell/genomes/hg38.chrom.sizes

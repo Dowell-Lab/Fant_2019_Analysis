@@ -64,12 +64,15 @@ reg <- function(df) {
 slope <- reg(full_dt)
 msg <- paste0("Treatment/Control Slope: ", signif(slope, 5))
 
+## NOTE: This step is not required, it's just for checking the quality
+## of results.
+
 ## Perform monte carlo subsampling to verify those results. Zhang, P.
 ## (1993). Model Selection Via Muiltfold Cross Validation. Ann. says
 ## that using N^2 will give us close to optimal results. That will
 ## take too long on my laptop, so we'll just do 100k trials, which is
 ## about 10% of that value.
-sample_slopes <- replicate(25000, reg(sample_frac(full_dt, 0.25)))
+sample_slopes <- replicate(100000, reg(sample_frac(full_dt, 0.25)))
 write(sample_slopes, "slopes.txt")
 max_distance <- max(sample_slopes)
 min_distance <- min(sample_slopes)

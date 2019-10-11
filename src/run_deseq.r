@@ -7,6 +7,7 @@
 
 library("tidyverse")
 library("DESeq2")
+library(EnhancedVolcano)
 
 ## Change this for different experiments...
 setwd('/home/zach/dowell_lab/pausing_meta_analysis/out/counts')
@@ -28,15 +29,21 @@ makefig <- function(deseqdata, fileprefix) {
 
     ptsize <- 40 * 1.5
 
-    png(paste0(fileprefix, "-diffexpr-hist.png"), 1500, 1000, pointsize = ptsize)
+    png(paste0(fileprefix, "-diffexpr-hist.png"), 3000, 1000, pointsize = ptsize)
     hist(res$pvalue, breaks = 50, col = "grey")
     dev.off()
-
-    png('MA_plot.png') plotMA(res) dev.off()
 
     png(paste0(fileprefix, "-diffexpr-maplot.png"), 3000, 2000, pointsize = ptsize)
     DESeq2::plotMA(res, main = "MA Plot")
     dev.off()
+
+    EnhancedVolcano(res,
+                    lab = rownames(res),
+                    x = 'log2FoldChange',
+                    y = 'pvalue',
+                    transcriptLabSize = 0,
+                    subtitle = '') +
+        ggsave(paste0(fileprefix, "-diffexpr-volcanoplot.png"), width=9, height=6)
 
     ## Generate a tsv
     write.table(na.omit(as.data.frame(res[2])),

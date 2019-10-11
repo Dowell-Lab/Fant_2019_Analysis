@@ -18,11 +18,13 @@
   - Discuss default of RPM normalization and strand-unawareness
 - Show iterations on custom metagene analysis, mention speedup
 
-### Pause Index
-- List of existing methods
-- Show some comparative images from Chen 2014 Paper
-
 ### PCA
 - Talk about batch correction and the options available
   - Show the difference between corrected and uncorrected
-  - Mention the difference between the implementations of algorithms used
+- Batch correction works either by adding error to a linear model,
+    or by using Empirical Bayes (prior estimation)
+	- Here we use the Limma package (Speed, 2003), which uses loess normalization
+
+### Pause Index
+- List of existing methods
+- Show some comparative images from Chen 2014 Paper

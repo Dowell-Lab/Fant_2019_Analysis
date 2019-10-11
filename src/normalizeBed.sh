@@ -35,7 +35,7 @@ fi
 ##############################
 
 # This is the file we're interested in analyzing
-RefSeq=/scratch/Shares/dowell/nascent/hg38/hg38_refseq.bed
+RefSeq=/scratch/Shares/dowell/genomes/hg38/hg38_refseq.bed
 
 ### FOR JENNA --- CHANGE THESE ###
 
