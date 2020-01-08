@@ -45,7 +45,7 @@ df_antisense <- countsAntiSense %>% separate(Geneid, into = c("geneid", "coord")
 df_antisense$coord = as.numeric(df_antisense$coord)
 
 ## Normalize the counts for each region by TPM
-tpm_normalize <- function(sense, antisense, sample) {
+tpm_normalize <- function(sense, antisense, sizefactor, sample) {
     ## First, calculate RPK for the strand only
     RPK_sample <- (sense[[sample]] / (sense$Length / (10 ^ 3)))
     ## Then, calculate RPK for both strands (for scaling factor)
@@ -54,29 +54,29 @@ tpm_normalize <- function(sense, antisense, sample) {
     ## Then, calculate the scaling factor
     scale <- sum(RPK) / 1000000
     ## Divide RPK values by scaling factor
-    out <- RPK_sample / scale
+    out <- sizefactor * (RPK_sample / scale)
     return(out)
 }
 
 ## TPM Normalize Sense Strand
 df_sense$C413_1_S3_R1_001.sorted.bam <-
-    tpm_normalize(df_sense, df_antisense, "C413_1_S3_R1_001.sorted.bam")
+    tpm_normalize(df_sense, df_antisense, 1.0762, "C413_1_S3_R1_001.sorted.bam")
 df_sense$C413_2_S4_R1_001.sorted.bam <-
-    tpm_normalize(df_sense, df_antisense, "C413_2_S4_R1_001.sorted.bam")
+    tpm_normalize(df_sense, df_antisense, 0.9514, "C413_2_S4_R1_001.sorted.bam")
 df_sense$PO_1_S1_R1_001.sorted.bam <-
-    tpm_normalize(df_sense, df_antisense, "PO_1_S1_R1_001.sorted.bam")
+    tpm_normalize(df_sense, df_antisense, 0.7735, "PO_1_S1_R1_001.sorted.bam")
 df_sense$PO_2_S2_R1_001.sorted.bam <-
-    tpm_normalize(df_sense, df_antisense, "PO_2_S2_R1_001.sorted.bam")
+    tpm_normalize(df_sense, df_antisense, 1.2678, "PO_2_S2_R1_001.sorted.bam")
 
 ## Repeat for Antisense
-df_antisense$C413_1_S3_R1_001.sorted.bam <-
-    tpm_normalize(df_antisense, df_sense, "C413_1_S3_R1_001.sorted.bam")
-df_antisense$C413_2_S4_R1_001.sorted.bam <-
-    tpm_normalize(df_antisense, df_sense, "C413_2_S4_R1_001.sorted.bam")
-df_antisense$PO_1_S1_R1_001.sorted.bam <-
-    tpm_normalize(df_antisense, df_sense, "PO_1_S1_R1_001.sorted.bam")
-df_antisense$PO_2_S2_R1_001.sorted.bam <-
-    tpm_normalize(df_antisense, df_sense, "PO_2_S2_R1_001.sorted.bam")
+## df_antisense$C413_1_S3_R1_001.sorted.bam <-
+##     tpm_normalize(df_antisense, df_sense, 1.0762, "C413_1_S3_R1_001.sorted.bam")
+## df_antisense$C413_2_S4_R1_001.sorted.bam <-
+##     tpm_normalize(df_antisense, df_sense, 0.9514, "C413_2_S4_R1_001.sorted.bam")
+## df_antisense$PO_1_S1_R1_001.sorted.bam <-
+##     tpm_normalize(df_antisense, df_sense, 0.7735, "PO_1_S1_R1_001.sorted.bam")
+## df_antisense$PO_2_S2_R1_001.sorted.bam <-
+##     tpm_normalize(df_antisense, df_sense, 1.2678, "PO_2_S2_R1_001.sorted.bam")
 
 ## Transform data by calculating the max, min, and mean for each row
 df_sense <- df_sense %>%
@@ -104,31 +104,68 @@ final_sense <- df_sense %>% group_by(coord) %>%
            mean_control_max = mean_control_mu + mean_control_var,
            mean_control_min = mean_control_mu - mean_control_var)
 
+## library('fitdistrplus')
+## treat_fit <- fitdist(final_sense$mean_treat_mu, 'gamma')
+## treat_shape <- summary(treat_fit)$estimate[1]
+## treat_rate <- summary(treat_fit)$estimate[2]
+## control_fit <- fitdist(final_sense$mean_control_mu, 'gamma')
+## control_shape <- summary(control_fit)$estimate[1]
+## control_rate <- summary(control_fit)$estimate[2]
+## final_sense <- final_sense %>%
+##     mutate(mean_treat_mu = pgamma(mean_treat_mu, shape = treat_shape, rate = treat_rate))
+## final_sense <- final_sense %>%
+##     mutate(mean_control_mu = pgamma(mean_control_mu, shape = control_shape, rate = control_rate))
 
-df_antisense <- df_antisense %>%
-    mutate(treat_mu = rowMeans(select(.,
-                                      C413_1_S3_R1_001.sorted.bam,
-                                      C413_2_S4_R1_001.sorted.bam)))
-df_antisense <- df_antisense %>%
-    mutate(control_mu = rowMeans(select(.,
-                                        PO_1_S1_R1_001.sorted.bam,
-                                        PO_2_S2_R1_001.sorted.bam)))
-df_antisense <- df_antisense %>% subset(select = -c(geneid, Chr, Start, End, Length,
-                                                    C413_1_S3_R1_001.sorted.bam,
-                                            C413_2_S4_R1_001.sorted.bam,
-                                            PO_1_S1_R1_001.sorted.bam,
-                                            PO_2_S2_R1_001.sorted.bam))
-df_antisense <- df_antisense %>% mutate(coord = ifelse(Strand == '-', (num_bins - 1) - coord, coord))
+## df_antisense <- df_antisense %>%
+##     mutate(treat_mu = rowMeans(select(.,
+##                                       C413_1_S3_R1_001.sorted.bam,
+##                                       C413_2_S4_R1_001.sorted.bam)))
+## df_antisense <- df_antisense %>%
+##     mutate(control_mu = rowMeans(select(.,
+##                                         PO_1_S1_R1_001.sorted.bam,
+##                                         PO_2_S2_R1_001.sorted.bam)))
+## df_antisense <- df_antisense %>% subset(select = -c(geneid, Chr, Start, End, Length,
+##                                                     C413_1_S3_R1_001.sorted.bam,
+##                                             C413_2_S4_R1_001.sorted.bam,
+##                                             PO_1_S1_R1_001.sorted.bam,
+##                                             PO_2_S2_R1_001.sorted.bam))
+## df_antisense <- df_antisense %>% mutate(coord = ifelse(Strand == '-', (num_bins - 1) - coord, coord))
 
-final_antisense <- df_antisense %>% group_by(coord) %>%
-    summarise(mean_treat_mu = -mean(treat_mu),
-              mean_treat_var = sd(treat_mu) / sqrt(length(treat_mu)),
-              mean_control_mu = -mean(control_mu),
-              mean_control_var = sd(control_mu) / sqrt(length(treat_mu))) %>%
-    mutate(mean_treat_max = mean_treat_mu + mean_treat_var,
-           mean_treat_min = mean_treat_mu - mean_treat_var,
-           mean_control_max = mean_control_mu + mean_control_var,
-           mean_control_min = mean_control_mu - mean_control_var)
+## final_antisense <- df_antisense %>% group_by(coord) %>%
+##     summarise(mean_treat_mu = -mean(treat_mu),
+##               mean_treat_var = sd(treat_mu) / sqrt(length(treat_mu)),
+##               mean_control_mu = -mean(control_mu),
+##               mean_control_var = sd(control_mu) / sqrt(length(treat_mu))) %>%
+##     mutate(mean_treat_max = mean_treat_mu + mean_treat_var,
+##            mean_treat_min = mean_treat_mu - mean_treat_var,
+##            mean_control_max = mean_control_mu + mean_control_var,
+##            mean_control_min = mean_control_mu - mean_control_var)
+
+## Set the correct axes based on filename
+if (grepl('tss', sense)) {
+    axes <- scale_x_continuous(breaks=c(0, 25, 50, 75, 100),
+                               labels=c("-2kb", "-1kb", "TSS", "+1kb", "+2kb"),
+                               limits=c(25,75))
+    vert <- geom_vline(xintercept = 50, color = "black", linetype= "solid")
+    ## pause <- geom_vline(xintercept = 51.5, color = "blue", linetype= "dashed", size = 0.4, alpha = 0.5)
+    pause <- geom_blank()
+} else if (grepl('body', sense)) {
+    axes <- scale_x_continuous(breaks=c(0, 100),
+                               labels=c("+2kb TSS", "-2kb TES"))
+    vert <- geom_blank()
+    pause <- geom_blank()
+} else if (grepl('tes', sense)) {
+    axes <- scale_x_continuous(breaks=c(0, 25, 50, 75, 100),
+                               labels=c("-2kb", "-1kb", "TES", "+1kb", "+2kb"),
+                               limits=c(25,75))
+    vert <- geom_vline(xintercept = 50, color = "black", linetype= "dashed", size = 0.1, alpha=0.5)
+    pause <- geom_blank()
+} else {
+    print("Pattern Matching Error In Plot Generation")
+    axes <- geom_blank()
+    vert <- geom_blank()
+    pause <- geom_blank()
+}
 
 ## Full Plot
 library("ggthemes")
@@ -139,7 +176,7 @@ ggplot() + theme_tufte() +
     ## Sense Knockdown
     geom_line(data = final_sense, aes(x = coord,
                                       y = mean_treat_mu,
-                                      color = 'Knockdown'), size = 0.25) +
+                                      color = 'Knockdown'), size = 0.5) +
     geom_ribbon(data = final_sense, aes(x = coord,
                                         ymin = mean_treat_min,
                                         ymax = mean_treat_max,
@@ -147,32 +184,42 @@ ggplot() + theme_tufte() +
     ## Sense Control
     geom_line(data = final_sense, aes(x = coord,
                                       y = mean_control_mu,
-                                      color = 'Control'), size = 0.25) +
+                                      color = 'Control'), size = 0.5) +
     geom_ribbon(data = final_sense, aes(x = coord,
                                         ymin = mean_control_min,
                                         ymax = mean_control_max,
                                         fill = 'Control'), size=0.25, alpha = 0.2) +
     ## Antisense Knockdown
-    geom_line(data = final_antisense, aes(x = coord,
-                                          y = mean_treat_mu,
-                                          color = 'Knockdown'), size=0.25) +
-    geom_ribbon(data = final_antisense, aes(x = coord,
-                                            ymin = mean_treat_min,
-                                            ymax = mean_treat_max,
-                                            fill = 'Knockdown'), size = 0.25, alpha = 0.2) +
-    ## Antisense Control
-    geom_line(data = final_antisense, aes(x = coord,
-                                          y = mean_control_mu,
-                                          color = 'Control'), size=0.25) +
-    geom_ribbon(data = final_antisense, aes(x = coord,
-                                            ymin = mean_control_min,
-                                            ymax = mean_control_max,
-                                            fill = 'Control'), size=0.25, alpha = 0.2) +
-    geom_hline(yintercept = 0, color = "black", size = 0.125) +
+    ## geom_line(data = final_antisense, aes(x = coord,
+    ##                                       y = mean_treat_mu,
+    ##                                       color = 'Knockdown'), size=0.25) +
+    ## geom_ribbon(data = final_antisense, aes(x = coord,
+    ##                                         ymin = mean_treat_min,
+    ##                                         ymax = mean_treat_max,
+    ##                                         fill = 'Knockdown'), size = 0.25, alpha = 0.2) +
+    ## ## Antisense Control
+    ## geom_line(data = final_antisense, aes(x = coord,
+    ##                                       y = mean_control_mu,
+    ##                                       color = 'Control'), size=0.25) +
+    ## geom_ribbon(data = final_antisense, aes(x = coord,
+    ##                                         ymin = mean_control_min,
+    ##                                         ymax = mean_control_max,
+    ##                                         fill = 'Control'), size=0.25, alpha = 0.2) +
+    ## Plot line and axis adjustment
+    axes + vert + pause + ylim(0, 4) +
+    ## geom_hline(yintercept = 0, color = "black", size = 0.125) +
+    ## Labels and such
     labs(title = "Metagene Plot", color = "Condition", fill = "Std. Dev. Mean") +
-    xlab("Bins") + ylab("Normalized Read Depth")
+    xlab("Genomic Position") +
+    ylab("Normalized Read Depth")
 
 ggsave(outfile, width = 10, height = 5)
+
+ggplot(data = final_sense) +
+    geom_density(aes(mean_treat_mu)) +
+    geom_density(aes(mean_control_mu)) +
+    theme_tufte() +
+    ggsave(str_c(outfile, "_dist.pdf"), width = 10, height = 5)
 
 ######################################################################
 ### metagene_graph_custom.r ends here

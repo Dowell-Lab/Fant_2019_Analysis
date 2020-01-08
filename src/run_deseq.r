@@ -91,7 +91,7 @@ cds <- DESeqDataSetFromMatrix(countData = correct_countdata, colData = correct_c
 cds <- DESeq(cds)
 
 ## Make a figure for this data
-makefig(cds, "genebody")
+body <- makefig(cds, "genebody")
 
 ## Extract the size factors
 sizes <- c(sizeFactors(cds))
@@ -126,10 +126,10 @@ dds <- DESeqDataSetFromMatrix(countData = full_countdata, colData = full_coldata
 sizeFactors(dds) <- sizes
 dds <- DESeq(dds)
 
-makefig(dds, "fullgene")
+full <- makefig(dds, "fullgene")
 
 ######################################################
-         ## Finally, use the initiation region only          ##
+## Finally, use the initiation region only          ##
 ######################################################
 
 ## We have to fix the counts table by removing the first row, hence "counts_fix.txt"
@@ -158,4 +158,46 @@ eds <- DESeqDataSetFromMatrix(countData = initiation_countdata, colData = initia
 sizeFactors(eds) <- sizes
 eds <- DESeq(eds)
 
-makefig(eds, "initiation")
+init <- makefig(eds, "initiation")
+
+## Here we run a hypergeometric test to see if enrichment in the 5'
+## gene set correlates to enrichment in the gene body gene set.
+
+## https://www.biostars.org/p/15548/
+## q.val = overlap size - 1
+## m.val = upregulated in 5'
+## n.val = total - m
+## k.val = upregulated in body
+
+init_df <- init
+init_df$gene <- rownames(init_df)
+init_df$common<- rownames(init_df)
+init_df <- as_tibble(init_df) %>% filter(pvalue < 0.05)
+
+body_df <- body
+body_df$gene <- rownames(body_df)
+body_df <- as_tibble(body_df) %>% filter(pvalue < 0.05)
+
+qplus1 <- inner_join(init_df, body_df, by='gene') %>% nrow()
+q.val <- qplus1 - 1
+m.val <- nrow(init_df)
+n.val <- nrow(init) - m.val
+k.val <- nrow(body_df)
+
+phyper(q.val, m.val,
+       n.val, k.val,
+       lower.tail = FALSE,
+       log.p = FALSE)
+
+## x - p-adj
+## y - control txn level TPM
+
+merge <- left_join(init_df, initiation_df, by='common') %>%
+    mutate(sign_padj = -sign(log2FoldChange) * log10(padj),
+           c_mu = rowMeans(select(.,
+                                  C413_1_S3_R1_001.sorted.bam,
+                                  C413_2_S4_R1_001.sorted.bam)))
+
+ggplot(data = merge) + geom_point(aes(x = sign_padj, y = c_mu)) +
+    scale_y_log10() + labs(x ="padj", y =" Mean CTRL Expression") +
+    ggsave('~/dowell_lab/funky_fig.pdf', width=10, height=5)

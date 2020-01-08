@@ -174,7 +174,7 @@ ggplot() + theme_tufte() +
                                             fill = 'Control'), size=0.25, alpha = 0.2) +
     geom_hline(yintercept = 0, color = "black", size = 0.125) +
     labs(title = "Metagene Plot", color = "Condition", fill = "Std. Dev. Mean") +
-    xlab("Bins") + ylab("Normalized Read Depth")
+    xlab("Relative Genomic Position (Percentage)") + ylab("Normalized Read Depth")
 ## ggsave("img.png", width = 10, height = 5)
 
 ggsave(outfile, width = 10, height = 5)
@@ -221,9 +221,9 @@ ggplot() + theme_tufte() +
                                             fill = 'Control'), size=0.25, alpha = 0.2) +
     geom_hline(yintercept = 0, color = "black", size = 0.125) +
     labs(title = "Metagene Plot", color = "Condition", fill = "Std. Dev. Mean") +
-    xlab("Bins") + ylab("Normalized Read Depth")
+    xlab("Relative Genomic Position (Percentage)") + ylab("Normalized Read Depth")
 
-ggsave(paste0(outfile, "_inset.png"), width = 10, height = 5)
+ggsave(paste0(outfile, "_inset.pdf"), width = 10, height = 5)
 
 ######################################################################
 ### metagene_graph_custom.r ends here

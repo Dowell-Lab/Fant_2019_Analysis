@@ -85,7 +85,7 @@ NegStrandFinalSorted="$ScratchDir"/"$RootName".neg.maxiso
 
 StrandsMerged="$ScratchDir"/"$RootName".merge.maxiso
 FPKMCommonID="$ScratchDir"/"$RootName".merge.maxiso.common
-FinalOut="$OutDir"/"$RootName".isoform_max.bed
+FinalOut="$OutDir"/"$RootName".isoform_max
 
 # Clean up temp files on exit
 function cleanup {
@@ -174,8 +174,10 @@ python "$ScriptDir"/convert_isoform.py -l "$ScriptDir"/refseq_to_common_id.txt \
 			 -o "$FPKMCommonID"
 
 ## At long last, we sort in descending order based
-sort -rnk7 "$FPKMCommonID" | sort -usk8 |
-		sort -k1,1 -k2,2 | awk -v OFS='\t' '{print $1, $2, $3, $4, $5, $6}' > "$FinalOut"
+sort -rnk7 "$FPKMCommonID" | sort -usk8 | grep -v "random" | grep -v "alt" | grep -v "chrUn" |
+		sort -k1,1 -k2,2n | awk -v OFS='\t' '{print $1, $2, $3, $4, $5, $6, $8}' > "$FinalOut"
+sort -rnk7 "$FPKMCommonID" | sort -usk8 | grep -v "random" | grep -v "alt" | grep -v "chrUn" |
+		sort -k1,1 -k2,2n | awk -v OFS='\t' '{print $1, $2, $3, $4, $5, $6}' > "$FinalOut".bed
 
 logr "Final Genes: ""$(wc -l "$FinalOut" | awk '{print $1}')"
 

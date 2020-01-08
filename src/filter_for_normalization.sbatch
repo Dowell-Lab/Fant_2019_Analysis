@@ -24,7 +24,7 @@ outBed=/scratch/Users/zama8258/processed_nascent/norm/coords.bed
 awk -v OFS='\t' -f <(cat - <<- "EOF"
 BEGIN {}
 {
-if ($3 - $2 > 120501) {
+if (sqrt($3-$2)^2 > 2000) {
   if ($6 == "+") {
     print $1, $2 + 120000, $3 - 500, $4, $5, $6
   } else {

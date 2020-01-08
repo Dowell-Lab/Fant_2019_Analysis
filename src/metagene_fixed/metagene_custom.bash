@@ -56,55 +56,59 @@ logr "Starting Analysis"
 srcDir=/scratch/Users/zama8258/pause_analysis_src/metagene_fixed
 bamDir=/scratch/Users/zama8258/processed_nascent_testing/mapped/bams
 numRegions=100
-tmpdir=$(mktemp -d)
-# tmpdir=/scratch/Users/zama8258/processed_nascent/metagene/
+# tmpdir=$(mktemp -d)
+tmpdir=/scratch/Users/zama8258/processed_nascent/fixed_metagene/testing
 
 NUM_CORES=8
-safFile="$tmpdir"/region_split.saf
-countsSenseOut="$tmpdir"/metagene_counts_sense.txt
-countsSenseFix="$tmpdir"/metagene_counts_sense_fix.txt
-countsAntiSenseOut="$tmpdir"/metagene_counts_antisense.txt
-countsAntiSenseFix="$tmpdir"/metagene_counts_antisense_fix.txt
+safFile="$tmpdir"/"$(basename $imgOut .pdf)"_region_split.saf
+countsSenseOut="$tmpdir"/metagene_counts_sense_"$(basename $imgOut .pdf)".txt
+countsSenseFix="$tmpdir"/metagene_counts_sense_fix_"$(basename $imgOut .pdf)".txt
+countsAntiSenseOut="$tmpdir"/metagene_counts_antisense_"$(basename $imgOut .pdf)".txt
+countsAntiSenseFix="$tmpdir"/metagene_counts_antisense_fix_"$(basename $imgOut .pdf)".txt
 
-module load python/3.6.3
-logr "Generating Segmented SAF File"
-python3 "$srcDir"/bedgraph_split_for_metagene.py \
-				-f "$regionFile" \
-				-n "$numRegions" \
-				-o "$safFile"
+if [ ! -f "$countsSenseFix" ] || [ ! -f "$countsAntiSenseFix" ]; then
 
-logr "Changing Directories"
-module load subread
-cd "$bamDir" || exit
-logr "Building Sense Counts Table from SAF"
-featureCounts \
-		-T "$NUM_CORES" \
-		-s 1 \
-		--fracOverlap 0.51 \
-		-F 'SAF' \
-		-a "$safFile" \
-		-o "$countsSenseOut" \
-		C413_1_S3_R1_001.sorted.bam \
-		C413_2_S4_R1_001.sorted.bam \
-		PO_1_S1_R1_001.sorted.bam \
-		PO_2_S2_R1_001.sorted.bam
+		module load python/3.6.3
+		logr "Generating Segmented SAF File"
+		python3 "$srcDir"/bedgraph_split_for_metagene.py \
+						-f "$regionFile" \
+						-n "$numRegions" \
+						-o "$safFile"
 
-logr "Building Antisense Counts Table from SAF"
-featureCounts \
-		-T "$NUM_CORES" \
-		-s 2 \
-		--fracOverlap 0.51 \
-		-F 'SAF' \
-		-a "$safFile" \
-		-o "$countsAntiSenseOut" \
-		C413_1_S3_R1_001.sorted.bam \
-		C413_2_S4_R1_001.sorted.bam \
-		PO_1_S1_R1_001.sorted.bam \
-		PO_2_S2_R1_001.sorted.bam
+		logr "Changing Directories"
+		module load subread
+		cd "$bamDir" || exit
+		logr "Building Sense Counts Table from SAF"
+		featureCounts \
+				-T "$NUM_CORES" \
+				-s 1 \
+				--fracOverlap 0.51 \
+				-F 'SAF' \
+				-a "$safFile" \
+				-o "$countsSenseOut" \
+				C413_1_S3_R1_001.sorted.bam \
+				C413_2_S4_R1_001.sorted.bam \
+				PO_1_S1_R1_001.sorted.bam \
+				PO_2_S2_R1_001.sorted.bam
 
-logr "Fixing Counts File"
-tail -n+2 "$countsSenseOut" > "$countsSenseFix"
-tail -n+2 "$countsAntiSenseOut" > "$countsAntiSenseFix"
+		logr "Building Antisense Counts Table from SAF"
+		featureCounts \
+				-T "$NUM_CORES" \
+				-s 2 \
+				--fracOverlap 0.51 \
+				-F 'SAF' \
+				-a "$safFile" \
+				-o "$countsAntiSenseOut" \
+				C413_1_S3_R1_001.sorted.bam \
+				C413_2_S4_R1_001.sorted.bam \
+				PO_1_S1_R1_001.sorted.bam \
+				PO_2_S2_R1_001.sorted.bam
+
+		logr "Fixing Counts File"
+		tail -n+2 "$countsSenseOut" > "$countsSenseFix"
+		tail -n+2 "$countsAntiSenseOut" > "$countsAntiSenseFix"
+
+fi
 
 logr "Generating Figure"
 Rscript "$srcDir"/metagene_graph_custom.r \

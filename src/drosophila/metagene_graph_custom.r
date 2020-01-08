@@ -16,7 +16,7 @@
 
 suppressMessages(library("tidyverse"))
 suppressMessages(library("ggplot2"))
-suppressMessages(library("argparse"))
+## suppressMessages(library("argparse"))
 suppressMessages(library("matrixStats"))
 
 parser <- ArgumentParser()
@@ -41,7 +41,7 @@ countsAntiSense <- read_delim(antisense, delim="\t")
 setwd('/home/zach/dowell_lab/pausing_meta_analysis/out/counts/drosophila')
 countsSense <- read_delim('metagene_counts_sense_fix.txt', delim="\t")
 countsAntiSense <- read_delim('metagene_counts_antisense_fix.txt', delim="\t")
-outfile <- '/home/zach/dowell_lab/pausing_meta_analysis/out/counts/drosophila/testing.pdf'
+outfile <- '/home/zach/dowell_lab/pausing_meta_analysis/out/drosophila/testing.pdf'
 num_bins <- 25
 
 df_sense <- countsSense %>% separate(Geneid, into = c("geneid", "coord"), sep="/")
@@ -191,21 +191,21 @@ ggplot() + theme_tufte() +
                                         ymax = mean_control_max,
                                         fill = 'Control'), size=0.25, alpha = 0.2) +
     ## Antisense Knockdown
-    geom_line(data = final_antisense, aes(x = coord,
-                                          y = mean_treat_mu,
-                                          color = 'Knockdown'), size=0.25) +
-    geom_ribbon(data = final_antisense, aes(x = coord,
-                                            ymin = mean_treat_min,
-                                            ymax = mean_treat_max,
-                                            fill = 'Knockdown'), size = 0.25, alpha = 0.2) +
-    ## Antisense Control
-    geom_line(data = final_antisense, aes(x = coord,
-                                          y = mean_control_mu,
-                                          color = 'Control'), size=0.25) +
-    geom_ribbon(data = final_antisense, aes(x = coord,
-                                            ymin = mean_control_min,
-                                            ymax = mean_control_max,
-                                            fill = 'Control'), size=0.25, alpha = 0.2) +
+    ## geom_line(data = final_antisense, aes(x = coord,
+    ##                                       y = mean_treat_mu,
+    ##                                       color = 'Knockdown'), size=0.25) +
+    ## geom_ribbon(data = final_antisense, aes(x = coord,
+    ##                                         ymin = mean_treat_min,
+    ##                                         ymax = mean_treat_max,
+    ##                                         fill = 'Knockdown'), size = 0.25, alpha = 0.2) +
+    ## ## Antisense Control
+    ## geom_line(data = final_antisense, aes(x = coord,
+    ##                                       y = mean_control_mu,
+    ##                                       color = 'Control'), size=0.25) +
+    ## geom_ribbon(data = final_antisense, aes(x = coord,
+    ##                                         ymin = mean_control_min,
+    ##                                         ymax = mean_control_max,
+    ##                                         fill = 'Control'), size=0.25, alpha = 0.2) +
     geom_hline(yintercept = 0, color = "black", size = 0.125) +
     labs(title = "Metagene Plot", color = "Condition", fill = "Std. Dev. Mean") +
     xlab("Bins") + ylab("Normalized Read Depth")

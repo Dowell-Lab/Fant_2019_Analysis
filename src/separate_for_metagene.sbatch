@@ -56,6 +56,8 @@ minLengthThreshold=2000 # Minimum gene length that we require
 # Load bedtools
 module load bedtools
 
+## TODO Adjust filtering to be used to give a fixed window
+
 # Filter off genes shorter than the threshold
 awk -v OFS='\t' -v thresh="$minLengthThreshold" \
 		'{if (sqrt($3-$2)^2 > thresh) print $1, $2, $3, $4, $5, $6, $7, $8}' "$srcBed" > "$filtered"
