@@ -1,4 +1,5 @@
 /..bfg-report/*
 /.Rhistory
 /out/*
-**/#*#
+**/*#*#
+**/slurm*
